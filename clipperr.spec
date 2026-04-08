@@ -1,12 +1,18 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
+import clipperr_core
+
 block_cipher = None
 
-# Binaries: (source, destination_folder_in_bundle)
-# We need to include the Rust core .so file
-binaries = [
-    ('venv/lib/python3.12/site-packages/clipperr_core/clipperr_core.cpython-312-x86_64-linux-gnu.so', 'clipperr_core')
-]
+# Get the path to the clipperr_core binary dynamically
+core_dir = os.path.dirname(clipperr_core.__file__)
+core_binaries = []
+for f in os.listdir(core_dir):
+    if f.startswith("clipperr_core") and (f.endswith(".so") or f.endswith(".pyd")):
+        core_binaries.append((os.path.join(core_dir, f), 'clipperr_core'))
+
+binaries = core_binaries
 
 # Datas: (source, destination_folder_in_bundle)
 datas = [
