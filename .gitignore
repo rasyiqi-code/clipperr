@@ -11,6 +11,8 @@ dist/
 build/
 venv/
 .venv/
+*.tar.gz
+*.zip
 
 # AI Models (large files, download via app)
 models/

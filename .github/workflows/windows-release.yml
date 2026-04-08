@@ -1,0 +1,58 @@
+name: Windows Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v1.0.0
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Build Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install maturin pyinstaller
+
+      - name: Install Project Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Build Rust Core
+        working-directory: ./core-engine
+        run: |
+          maturin build --release
+
+      - name: Install Rust Core Wheel
+        run: |
+          # Find the wheel and install it
+          Get-ChildItem -Path core-engine/target/wheels/ -Filter *.whl | ForEach-Object { pip install $_.FullName }
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller --noconfirm clipperr.spec
+
+      - name: Package Release
+        run: |
+          Compress-Archive -Path dist/clipperr/* -DestinationPath clipperr-windows-v1.0.zip
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: clipperr-windows-v1.0.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
