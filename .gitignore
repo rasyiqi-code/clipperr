@@ -1,0 +1,32 @@
+# Environment
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+
+# AI Models (large files, download via app)
+models/
+
+# Exports (user-generated)
+exports/
+
+# Rust
+core-engine/target/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

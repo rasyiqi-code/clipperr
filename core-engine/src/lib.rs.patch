@@ -1,0 +1,16 @@
+--- /home/rasyiqi/Project/clipperr/core-engine/src/lib.rs
++++ /home/rasyiqi/Project/clipperr/core-engine/src/lib.rs
+@@ -165 +165 @@
+-    let mut filter_chain = crop_filter;
++    let mut filter_chain = crop_filter.clone();
+@@ -190 +190 @@
+-        .args(&[
++        .args({
++            println!("DEBUG: ffmpeg filter chain: {}", filter_chain);
++            &[
+@@ -204 +204 @@
+-            &output_path,
+-        ])
++            output_path.as_str(),
++            ]
++        })
