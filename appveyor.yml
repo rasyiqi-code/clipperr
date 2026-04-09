@@ -45,10 +45,10 @@ artifacts:
   - path: clipperr-windows-v1.0.zip
     name: clipperr-windows-binary
 
-# Konfigurasi Pengiriman Otomatis ke GitHub
-deploy:
-  provider: GitHub
-  auth_token: $(GITHUB_TOKEN) # Mengambil dari Environment Variable di UI AppVeyor
-  artifact: clipperr-windows-binary
-  on:
-    appveyor_repo_tag: true
+# Pengiriman menggunakan GitHub CLI (lebih stabil)
+deploy_script:
+  - ps: |
+      if ($env:APPVEYOR_REPO_TAG -eq "true") {
+        echo "Uploading release asset for tag $($env:APPVEYOR_REPO_TAG_NAME)..."
+        gh release upload $($env:APPVEYOR_REPO_TAG_NAME) clipperr-windows-v1.0.zip --clobber
+      }
