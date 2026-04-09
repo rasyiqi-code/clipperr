@@ -120,7 +120,7 @@ class ModelManager:
     def __init__(self):
         self.models = {
             "whisper-base": {
-                "url": "https://github.com/Purfview/whisper-standalone-win/releases/download/libs/whisper-base.zip",
+                "repo": "Systran/faster-whisper-base",
                 "files": ["model.bin", "config.json", "vocabulary.txt"],
                 "path": config.WHISPER_MODEL_PATH,
             },
