@@ -34,9 +34,7 @@ from logger import get_logger, setup_logging
 setup_logging()
 log = get_logger(__name__)
 
-# Load .env
-load_dotenv()
-HF_TOKEN = os.getenv("HF_TOKEN", "")
+# Note: HF_TOKEN is now handled by the 'prefs' singleton in config.py
 
 
 class clipperrApp(QMainWindow):
@@ -70,10 +68,7 @@ class clipperrApp(QMainWindow):
         # Pages
         self._home = HomePage()
         self._results = ResultsPage()
-        self._settings = SettingsPage(hf_token=HF_TOKEN)
-        self._monitor = MonitorPage()
-        self._results = ResultsPage()
-        self._settings = SettingsPage(hf_token=HF_TOKEN)
+        self._settings = SettingsPage()
         self._monitor = MonitorPage()
 
         self._stack.addWidget(self._home)

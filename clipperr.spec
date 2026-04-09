@@ -17,8 +17,16 @@ binaries = core_binaries
 # Datas: (source, destination_folder_in_bundle)
 datas = [
     ('app/assets/icon.png', 'app/assets'),
-    ('.env', '.'),
 ]
+
+# Only add .env if it actually exists (it's usually gitignored)
+if os.path.exists('.env'):
+    datas.append(('.env', '.'))
+else:
+    # Create an empty .env if it doesn't exist to avoid runtime errors later
+    with open('.env', 'w') as f:
+        pass
+    datas.append(('.env', '.'))
 
 a = Analysis(
     ['app/main.py'],

@@ -82,6 +82,7 @@ class UserSettings:
         self.llm_provider = "local"  # 'local' or 'api'
         self.openrouter_key = ""
         self.openrouter_model = "google/gemini-2.0-flash-lite:free"
+        self.hf_token = os.getenv("HF_TOKEN", "") # Fallback to env
         self.load()
 
     def load(self):
@@ -98,6 +99,7 @@ class UserSettings:
                     self.llm_provider = data.get("llm_provider", "local")
                     self.openrouter_key = data.get("openrouter_key", "")
                     self.openrouter_model = data.get("openrouter_model", "google/gemini-2.0-flash-lite:free")
+                    self.hf_token = data.get("hf_token", self.hf_token)
             except Exception:
                 pass
 
@@ -112,8 +114,10 @@ class UserSettings:
                 "watermark_opacity": self.watermark_opacity,
                 "llm_provider": self.llm_provider,
                 "openrouter_key": self.openrouter_key,
-                "openrouter_model": self.openrouter_model
+                "openrouter_model": self.openrouter_model,
+                "hf_token": self.hf_token
             }, f)
 
 # Global singleton
 prefs = UserSettings()
+HF_TOKEN = prefs.hf_token

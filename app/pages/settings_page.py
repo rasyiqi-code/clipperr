@@ -16,7 +16,7 @@ log = get_logger(__name__)
 class SettingsPage(QScrollArea):
     """System configuration page: dependency installer + model manager."""
 
-    def __init__(self, hf_token: str = "", parent=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
         self.setWidgetResizable(True)
         self.setFrameShape(QFrame.NoFrame)
@@ -53,7 +53,7 @@ class SettingsPage(QScrollArea):
         self._build_ai_config_section(layout)
 
         # ── AI Model Manager ─────────────────────────
-        self._build_model_section(layout, hf_token)
+        self._build_model_section(layout)
 
         layout.addStretch()
 
@@ -350,7 +350,8 @@ class SettingsPage(QScrollArea):
 
         self._refresh_torch_ui()
 
-    def _build_model_section(self, layout: QVBoxLayout, hf_token: str):
+    def _build_model_section(self, layout: QVBoxLayout):
+        from config import prefs
         desc = QLabel("Manage your local AI models and application preferences.")
         desc.setStyleSheet("color: #94a3b8; margin-bottom: 20px;")
         layout.addWidget(desc)
@@ -370,8 +371,8 @@ class SettingsPage(QScrollArea):
             "background-color: #0f172a; border: 1px solid #1e293b; "
             "border-radius: 5px; padding: 5px;"
         )
-        if hf_token:
-            self.token_input.setText(hf_token)
+        self.token_input.setText(prefs.hf_token)
+        self.token_input.textChanged.connect(self._on_token_changed)
         token_layout.addWidget(token_label)
         token_layout.addWidget(self.token_input)
         layout.addLayout(token_layout)
@@ -411,6 +412,11 @@ class SettingsPage(QScrollArea):
                 lambda _checked, m=model_id: self._start_download(m)
             )
             self._refresh_model_ui(model_id)
+
+    def _on_token_changed(self, text):
+        from config import prefs
+        prefs.hf_token = text
+        prefs.save()
 
     # ══════════════════════════════════════════════════
     #  Torch dependency
