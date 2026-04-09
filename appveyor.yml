@@ -59,16 +59,18 @@ artifacts:
 deploy_script:
   - ps: |
       if ($env:APPVEYOR_REPO_TAG -eq "true") {
-        if (-not $env:GH_TOKEN) { 
-          Write-Error "GH_TOKEN tidak ditemukan!" 
-          exit 1
-        }
-        echo "Melakukan autentikasi..."
-        echo $env:GH_TOKEN | & "C:\Program Files\GitHub CLI\gh.exe" auth login --with-token
+        # GitHub CLI secara otomatis menggunakan lingkungan GH_TOKEN jika tersedia
         
         $tag = $env:APPVEYOR_REPO_TAG_NAME
         $zip = "clipperr-windows-$($tag).zip"
         
-        echo "Membuat rilis GitHub dan mengunggah $zip..."
-        & "C:\Program Files\GitHub CLI\gh.exe" release create $tag $zip --title "clipperr $tag" --notes "Rilis otomatis untuk versi $tag" --generate-notes
+        # Cek apakah rilis sudah ada
+        $releaseCheck = & "C:\Program Files\GitHub CLI\gh.exe" release view $tag 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            echo "Rilis $tag sudah ada. Mengunggah $zip ke rilis yang sudah ada..."
+            & "C:\Program Files\GitHub CLI\gh.exe" release upload $tag $zip --clobber
+        } else {
+            echo "Membuat rilis baru $tag dan mengunggah $zip..."
+            & "C:\Program Files\GitHub CLI\gh.exe" release create $tag $zip --title "clipperr $tag" --notes "Rilis otomatis untuk versi $tag" --generate-notes
+        }
       }
