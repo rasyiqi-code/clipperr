@@ -2,29 +2,35 @@ version: 1.0.{build}
 image: Visual Studio 2022
 
 environment:
-  PYTHON_VERSION: "3.12"
-  PYTHON_ARCH: "64"
-
-stack: python %PYTHON_VERSION%
+  PYTHON_DIR: "C:\\Python312-x64"
 
 install:
-  - ps: |
-      # Install Rust toolchain
-      $env:PATH += ";$env:USERPROFILE\.cargo\bin"
-      if (!(Test-Path "$env:USERPROFILE\.cargo\bin\rustc.exe")) {
-          Write-Host "Installing Rust..."
-          Invoke-WebRequest -Uri https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe -OutFile rustup-init.exe
-          .\rustup-init.exe -y --default-toolchain stable --default-host x86_64-pc-windows-msvc
-      }
+  # 1. Setup Python PATH
+  - set PATH=%PYTHON_DIR%;%PYTHON_DIR%\Scripts;%PATH%
+  
+  # 2. Setup Rust toolchain
+  - curl -sSf -o rustup-init.exe https://win.rustup.rs/
+  - rustup-init.exe -y --default-toolchain stable --default-host x86_64-pc-windows-msvc
+  - set PATH=%PATH%;%USERPROFILE%\.cargo\bin
+  - rustc --version
+
+  # 3. Log environment info
+  - python --version
+  - pip --version
+
+  # 4. Install Dependencies
   - python -m pip install --upgrade pip
   - pip install -r requirements.txt
   - pip install maturin pyinstaller pillow
 
 build_script:
+  # 1. Build Rust Core
   - cd core-engine
   - maturin build --release
   - ps: Get-ChildItem target/wheels/*.whl | ForEach-Object { pip install $_.FullName }
   - cd ..
+  
+  # 2. Build Main Application
   - pyinstaller --noconfirm clipperr.spec
 
 after_build:
