@@ -1,5 +1,5 @@
-import os
-import urllib.request
+import requests
+import certifi
 
 from huggingface_hub import hf_hub_download
 from PySide6.QtCore import QObject, QThread, Signal
@@ -55,8 +55,27 @@ class DownloadWorker(QObject):
         try:
             os.makedirs(local_dir, exist_ok=True)
             filepath = os.path.join(local_dir, filename)
-            self.progress_signal.emit(f"Downloading {filename}...", 30)
-            urllib.request.urlretrieve(url, filepath)
+            self.progress_signal.emit(f"Connecting to {filename}...", 10)
+            
+            # Use requests with certifi for better SSL support in frozen apps
+            with requests.get(url, stream=True, verify=certifi.where()) as r:
+                r.raise_for_status()
+                total_length = r.headers.get('content-length')
+                
+                with open(filepath, 'wb') as f:
+                    if total_length is None:
+                        f.write(r.content)
+                    else:
+                        dl = 0
+                        total_length = int(total_length)
+                        for chunk in r.iter_content(chunk_size=8192):
+                            if chunk:
+                                dl += len(chunk)
+                                f.write(chunk)
+                                # Progress between 10% and 90%
+                                done = int(80 * dl / total_length)
+                                self.progress_signal.emit(f"Downloading {filename}...", 10 + done)
+            
             self.progress_signal.emit("Download complete!", 100)
             self.finished_signal.emit(filename, True)
             log.info("URL download complete: %s", filepath)

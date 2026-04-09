@@ -6,6 +6,11 @@ Entry point and main window orchestrator.
 import sys
 import os
 import warnings
+import certifi
+
+# Fix SSL certificates for frozen apps - must be done BEFORE other imports that use networking
+os.environ['SSL_CERT_FILE'] = certifi.where()
+os.environ['HTTPS_CA_BUNDLE'] = certifi.where()
 
 # Suppress all non-essential UserWarnings (like torchcodec/cuda/FFmpeg version mismatches)
 # so the terminal stays clean for the user.

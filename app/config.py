@@ -12,7 +12,16 @@ load_dotenv()
 HF_TOKEN = os.getenv("HF_TOKEN")
 
 # ── Paths ──────────────────────────────────────────────
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import sys
+
+# Detect if the app is run as a bundle (PyInstaller)
+if getattr(sys, 'frozen', False):
+    # Running in a frozen bundle (.exe)
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    # Running in a normal Python environment
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 MODELS_DIR = os.path.join(BASE_DIR, "models")
 OUTPUT_DIR = os.path.join(BASE_DIR, "exports")
 HISTORY_FILE = os.path.join(BASE_DIR, "history.json")
