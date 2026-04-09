@@ -49,6 +49,12 @@ jobs:
         run: |
           Compress-Archive -Path dist/clipperr/* -DestinationPath clipperr-windows-v1.0.zip
 
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipperr-windows-binary
+          path: clipperr-windows-v1.0.zip
+
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
