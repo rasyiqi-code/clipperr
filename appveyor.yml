@@ -1,0 +1,37 @@
+version: 1.0.{build}
+image: Visual Studio 2022
+
+environment:
+  PYTHON_VERSION: "3.12"
+  PYTHON_ARCH: "64"
+
+stack: python %PYTHON_VERSION%
+
+install:
+  - ps: |
+      # Install Rust toolchain
+      $env:PATH += ";$env:USERPROFILE\.cargo\bin"
+      if (!(Test-Path "$env:USERPROFILE\.cargo\bin\rustc.exe")) {
+          Write-Host "Installing Rust..."
+          Invoke-WebRequest -Uri https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe -OutFile rustup-init.exe
+          .\rustup-init.exe -y --default-toolchain stable --default-host x86_64-pc-windows-msvc
+      }
+  - python -m pip install --upgrade pip
+  - pip install -r requirements.txt
+  - pip install maturin pyinstaller pillow
+
+build_script:
+  - cd core-engine
+  - maturin build --release
+  - ps: Get-ChildItem target/wheels/*.whl | ForEach-Object { pip install $_.FullName }
+  - cd ..
+  - pyinstaller --noconfirm clipperr.spec
+
+after_build:
+  - ps: Compress-Archive -Path dist/clipperr/* -DestinationPath clipperr-windows-v1.0.zip
+
+artifacts:
+  - path: clipperr-windows-v1.0.zip
+    name: clipperr-windows-binary
+
+deploy: off
