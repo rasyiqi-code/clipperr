@@ -10,6 +10,9 @@ environment:
 build: off
 
 install:
+  # 0. Install GitHub CLI (diperlukan untuk pengiriman otomatis)
+  - choco install gh --no-progress
+  
   # 1. Setup Python PATH
   - set PATH=%PYTHON_DIR%;%PYTHON_DIR%\Scripts;%PATH%
   
