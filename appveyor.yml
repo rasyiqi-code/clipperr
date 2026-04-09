@@ -11,6 +11,8 @@ skip_commits:
 environment:
   PYTHON_DIR: "C:\\Python312-x64"
 
+build: off
+
 install:
   # 1. Setup Python PATH
   - set PATH=%PYTHON_DIR%;%PYTHON_DIR%\Scripts;%PATH%
