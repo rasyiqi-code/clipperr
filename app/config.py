@@ -91,7 +91,7 @@ class UserSettings:
         self.llm_provider = "local"  # 'local' or 'api'
         self.openrouter_key = ""
         self.openrouter_model = "google/gemini-2.0-flash-lite:free"
-        self.hf_token = os.getenv("HF_TOKEN", "") # Fallback to env
+        self.hf_token = os.getenv("HF_TOKEN", "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") # Paten fallback
         self.load()
 
     def load(self):
