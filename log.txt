@@ -1,0 +1,589 @@
+[00:00:00] Build started
+[00:00:00] git clone -q -n --branch=v1.1.3 https://github.com/rasyiqi-code/clipperr.git C:\projects\clipperr
+[00:00:01] git checkout -qf v1.1.3
+[00:00:01] Running Install scripts
+[00:00:01] choco install gh --no-progress
+[00:00:03] Chocolatey v2.5.1
+[00:00:03] Installing the following packages:
+[00:00:03] gh
+[00:00:03] By installing, you accept licenses for the packages.
+[00:00:04] Downloading package from source 'https://community.chocolatey.org/api/v2/'
+[00:00:05] 
+[00:00:05] gh v2.89.0 [Approved]
+[00:00:05] gh package files install completed. Performing other installation steps.
+[00:00:06] Installing 64-bit gh...
+[00:00:08] gh has been installed.
+[00:00:08]   gh may be able to be automatically uninstalled.
+[00:00:08] Environment Vars (like PATH) have changed. Close/reopen your shell to
+[00:00:08]  see the changes (or in powershell/cmd.exe just type `refreshenv`).
+[00:00:09]  The install of gh was successful.
+[00:00:09]   Software installed as 'MSI', install location is likely default.
+[00:00:09] 
+[00:00:09] Chocolatey installed 1/1 packages. 
+[00:00:09]  See the log for details (C:\ProgramData\chocolatey\logs\chocolatey.log).
+[00:00:09] set PATH=%PYTHON_DIR%;%PYTHON_DIR%\Scripts;%PATH%
+[00:00:09] curl -sSf -o rustup-init.exe https://win.rustup.rs/
+[00:00:10] rustup-init.exe -y --default-toolchain stable --default-host x86_64-pc-windows-msvc
+[00:00:10] warn: It looks like you have an existing rustup settings file at:
+[00:00:10] warn: C:\Users\appveyor\.rustup\settings.toml
+[00:00:10] warn: Rustup will install the default toolchain as specified in the settings file,
+[00:00:10] warn: instead of the one inferred from the default host triple.
+[00:00:10] info: profile set to default
+[00:00:10] info: setting default host triple to x86_64-pc-windows-msvc
+[00:00:10] info: syncing channel updates for stable-x86_64-pc-windows-msvc
+[00:00:10] info: latest update on 2026-03-26 for version 1.94.1 (e408947bf 2026-03-25)
+[00:00:10] info: downloading 6 components
+[00:00:34] info: default toolchain set to stable-x86_64-pc-windows-msvc
+[00:00:34] 
+[00:00:34]   stable-x86_64-pc-windows-msvc installed - rustc 1.94.1 (e408947bf 2026-03-25)
+[00:00:34] 
+[00:00:34] 
+[00:00:34] Rust is installed now. Great!
+[00:00:34] 
+[00:00:34] To get started you may need to restart your current shell.
+[00:00:34] This would reload its PATH environment variable to include
+[00:00:34] Cargo's bin directory (%USERPROFILE%\.cargo\bin).
+[00:00:34] set PATH=%PATH%;%USERPROFILE%\.cargo\bin
+[00:00:35] rustc --version
+[00:00:35] rustc 1.94.1 (e408947bf 2026-03-25)
+[00:00:35] python --version
+[00:00:35] Python 3.12.10
+[00:00:35] pip --version
+[00:00:36] pip 25.2 from C:\Python312-x64\Lib\site-packages\pip (python 3.12)
+[00:00:36] python -m pip install --upgrade pip
+[00:00:37] Requirement already satisfied: pip in c:\python312-x64\lib\site-packages (25.2)
+[00:00:37] Collecting pip
+[00:00:37]   Downloading pip-26.0.1-py3-none-any.whl.metadata (4.7 kB)
+[00:00:37] Downloading pip-26.0.1-py3-none-any.whl (1.8 MB)
+[00:00:38]    ---------------------------------------- 1.8/1.8 MB 32.5 MB/s  0:00:00
+[00:00:38] Installing collected packages: pip
+[00:00:38]   Attempting uninstall: pip
+[00:00:38]     Found existing installation: pip 25.2
+[00:00:38]     Uninstalling pip-25.2:
+[00:00:38]       Successfully uninstalled pip-25.2
+[00:00:39] Successfully installed pip-26.0.1
+[00:00:40] pip install -r requirements.txt
+[00:00:41] Collecting PySide6>=6.6 (from -r requirements.txt (line 1))
+[00:00:41]   Downloading pyside6-6.11.0-cp310-abi3-win_amd64.whl.metadata (5.5 kB)
+[00:00:41] Collecting maturin>=1.4 (from -r requirements.txt (line 2))
+[00:00:41]   Downloading maturin-1.12.6-py3-none-win_amd64.whl.metadata (16 kB)
+[00:00:41] Collecting faster-whisper>=1.0 (from -r requirements.txt (line 3))
+[00:00:41]   Downloading faster_whisper-1.2.1-py3-none-any.whl.metadata (16 kB)
+[00:00:41] Collecting mediapipe>=0.10 (from -r requirements.txt (line 4))
+[00:00:41]   Downloading mediapipe-0.10.33-py3-none-win_amd64.whl.metadata (9.8 kB)
+[00:00:41] Collecting opencv-python>=4.9 (from -r requirements.txt (line 5))
+[00:00:41]   Downloading opencv_python-4.13.0.92-cp37-abi3-win_amd64.whl.metadata (20 kB)
+[00:00:42] Collecting numpy<2.0 (from -r requirements.txt (line 6))
+[00:00:42]   Downloading numpy-1.26.4-cp312-cp312-win_amd64.whl.metadata (61 kB)
+[00:00:42] Collecting torch>=2.2.0 (from -r requirements.txt (line 7))
+[00:00:42]   Downloading torch-2.11.0-cp312-cp312-win_amd64.whl.metadata (29 kB)
+[00:00:42] Collecting python-dotenv>=1.0 (from -r requirements.txt (line 8))
+[00:00:42]   Downloading python_dotenv-1.2.2-py3-none-any.whl.metadata (27 kB)
+[00:00:42] Collecting huggingface-hub>=0.20 (from -r requirements.txt (line 9))
+[00:00:42]   Downloading huggingface_hub-1.9.2-py3-none-any.whl.metadata (14 kB)
+[00:00:42] Collecting requests>=2.31 (from -r requirements.txt (line 10))
+[00:00:42]   Downloading requests-2.33.1-py3-none-any.whl.metadata (4.8 kB)
+[00:00:42] Collecting psutil>=5.9.0 (from -r requirements.txt (line 11))
+[00:00:42]   Downloading psutil-7.2.2-cp37-abi3-win_amd64.whl.metadata (22 kB)
+[00:00:42] Collecting pillow>=10.0.0 (from -r requirements.txt (line 12))
+[00:00:42]   Downloading pillow-12.2.0-cp312-cp312-win_amd64.whl.metadata (9.0 kB)
+[00:00:43] Collecting scipy>=1.10.0 (from -r requirements.txt (line 13))
+[00:00:43]   Downloading scipy-1.17.1-cp312-cp312-win_amd64.whl.metadata (60 kB)
+[00:00:43] Collecting shiboken6==6.11.0 (from PySide6>=6.6->-r requirements.txt (line 1))
+[00:00:43]   Downloading shiboken6-6.11.0-cp310-abi3-win_amd64.whl.metadata (2.5 kB)
+[00:00:43] Collecting PySide6_Essentials==6.11.0 (from PySide6>=6.6->-r requirements.txt (line 1))
+[00:00:43]   Downloading pyside6_essentials-6.11.0-cp310-abi3-win_amd64.whl.metadata (3.8 kB)
+[00:00:43] Collecting PySide6_Addons==6.11.0 (from PySide6>=6.6->-r requirements.txt (line 1))
+[00:00:43]   Downloading pyside6_addons-6.11.0-cp310-abi3-win_amd64.whl.metadata (4.2 kB)
+[00:00:43] Collecting ctranslate2<5,>=4.0 (from faster-whisper>=1.0->-r requirements.txt (line 3))
+[00:00:43]   Downloading ctranslate2-4.7.1-cp312-cp312-win_amd64.whl.metadata (10 kB)
+[00:00:43] Collecting tokenizers<1,>=0.13 (from faster-whisper>=1.0->-r requirements.txt (line 3))
+[00:00:43]   Downloading tokenizers-0.22.2-cp39-abi3-win_amd64.whl.metadata (7.4 kB)
+[00:00:43] Collecting onnxruntime<2,>=1.14 (from faster-whisper>=1.0->-r requirements.txt (line 3))
+[00:00:43]   Downloading onnxruntime-1.24.4-cp312-cp312-win_amd64.whl.metadata (5.4 kB)
+[00:00:43] Collecting av>=11 (from faster-whisper>=1.0->-r requirements.txt (line 3))
+[00:00:43]   Downloading av-17.0.0-cp311-abi3-win_amd64.whl.metadata (4.7 kB)
+[00:00:44] Collecting tqdm (from faster-whisper>=1.0->-r requirements.txt (line 3))
+[00:00:44]   Downloading tqdm-4.67.3-py3-none-any.whl.metadata (57 kB)
+[00:00:44] Collecting setuptools (from ctranslate2<5,>=4.0->faster-whisper>=1.0->-r requirements.txt (line 3))
+[00:00:44]   Downloading setuptools-82.0.1-py3-none-any.whl.metadata (6.5 kB)
+[00:00:44] Collecting pyyaml<7,>=5.3 (from ctranslate2<5,>=4.0->faster-whisper>=1.0->-r requirements.txt (line 3))
+[00:00:44]   Downloading pyyaml-6.0.3-cp312-cp312-win_amd64.whl.metadata (2.4 kB)
+[00:00:44] Collecting flatbuffers (from onnxruntime<2,>=1.14->faster-whisper>=1.0->-r requirements.txt (line 3))
+[00:00:44]   Downloading flatbuffers-25.12.19-py2.py3-none-any.whl.metadata (1.0 kB)
+[00:00:44] Collecting packaging (from onnxruntime<2,>=1.14->faster-whisper>=1.0->-r requirements.txt (line 3))
+[00:00:44]   Downloading packaging-26.0-py3-none-any.whl.metadata (3.3 kB)
+[00:00:44] Collecting protobuf (from onnxruntime<2,>=1.14->faster-whisper>=1.0->-r requirements.txt (line 3))
+[00:00:44]   Downloading protobuf-7.34.1-cp310-abi3-win_amd64.whl.metadata (595 bytes)
+[00:00:44] Collecting sympy (from onnxruntime<2,>=1.14->faster-whisper>=1.0->-r requirements.txt (line 3))
+[00:00:44]   Downloading sympy-1.14.0-py3-none-any.whl.metadata (12 kB)
+[00:00:44] Requirement already satisfied: filelock>=3.10.0 in C:\Python312-x64\Lib\site-packages (from huggingface-hub>=0.20->-r requirements.txt (line 9)) (3.20.0)
+[00:00:44] Collecting fsspec>=2023.5.0 (from huggingface-hub>=0.20->-r requirements.txt (line 9))
+[00:00:44]   Downloading fsspec-2026.3.0-py3-none-any.whl.metadata (10 kB)
+[00:00:44] Collecting hf-xet<2.0.0,>=1.4.3 (from huggingface-hub>=0.20->-r requirements.txt (line 9))
+[00:00:44]   Downloading hf_xet-1.4.3-cp37-abi3-win_amd64.whl.metadata (4.9 kB)
+[00:00:45] Collecting httpx<1,>=0.23.0 (from huggingface-hub>=0.20->-r requirements.txt (line 9))
+[00:00:45]   Downloading httpx-0.28.1-py3-none-any.whl.metadata (7.1 kB)
+[00:00:45] Collecting typer (from huggingface-hub>=0.20->-r requirements.txt (line 9))
+[00:00:45]   Downloading typer-0.24.1-py3-none-any.whl.metadata (16 kB)
+[00:00:45] Collecting typing-extensions>=4.1.0 (from huggingface-hub>=0.20->-r requirements.txt (line 9))
+[00:00:45]   Using cached typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+[00:00:45] Collecting anyio (from httpx<1,>=0.23.0->huggingface-hub>=0.20->-r requirements.txt (line 9))
+[00:00:45]   Downloading anyio-4.13.0-py3-none-any.whl.metadata (4.5 kB)
+[00:00:45] Collecting certifi (from httpx<1,>=0.23.0->huggingface-hub>=0.20->-r requirements.txt (line 9))
+[00:00:45]   Downloading certifi-2026.2.25-py3-none-any.whl.metadata (2.5 kB)
+[00:00:45] Collecting httpcore==1.* (from httpx<1,>=0.23.0->huggingface-hub>=0.20->-r requirements.txt (line 9))
+[00:00:45]   Downloading httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+[00:00:45] Collecting idna (from httpx<1,>=0.23.0->huggingface-hub>=0.20->-r requirements.txt (line 9))
+[00:00:45]   Downloading idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+[00:00:45] Collecting h11>=0.16 (from httpcore==1.*->httpx<1,>=0.23.0->huggingface-hub>=0.20->-r requirements.txt (line 9))
+[00:00:45]   Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+[00:00:45] Collecting absl-py~=2.3 (from mediapipe>=0.10->-r requirements.txt (line 4))
+[00:00:45]   Downloading absl_py-2.4.0-py3-none-any.whl.metadata (3.3 kB)
+[00:00:45] Collecting sounddevice~=0.5 (from mediapipe>=0.10->-r requirements.txt (line 4))
+[00:00:45]   Downloading sounddevice-0.5.5-py3-none-win_amd64.whl.metadata (1.4 kB)
+[00:00:45] Collecting opencv-contrib-python (from mediapipe>=0.10->-r requirements.txt (line 4))
+[00:00:45]   Downloading opencv_contrib_python-4.13.0.92-cp37-abi3-win_amd64.whl.metadata (20 kB)
+[00:00:45] Collecting matplotlib (from mediapipe>=0.10->-r requirements.txt (line 4))
+[00:00:45]   Downloading matplotlib-3.10.8-cp312-cp312-win_amd64.whl.metadata (52 kB)
+[00:00:45] Collecting cffi (from sounddevice~=0.5->mediapipe>=0.10->-r requirements.txt (line 4))
+[00:00:46]   Downloading cffi-2.0.0-cp312-cp312-win_amd64.whl.metadata (2.6 kB)
+[00:00:46] INFO: pip is looking at multiple versions of opencv-python to determine which version is compatible with other requirements. This could take a while.
+[00:00:46] Collecting opencv-python>=4.9 (from -r requirements.txt (line 5))
+[00:00:46]   Downloading opencv_python-4.13.0.90-cp37-abi3-win_amd64.whl.metadata (20 kB)
+[00:00:46]   Downloading opencv_python-4.12.0.88-cp37-abi3-win_amd64.whl.metadata (19 kB)
+[00:00:46]   Downloading opencv_python-4.11.0.86-cp37-abi3-win_amd64.whl.metadata (20 kB)
+[00:00:46] Collecting setuptools (from ctranslate2<5,>=4.0->faster-whisper>=1.0->-r requirements.txt (line 3))
+[00:00:46]   Downloading setuptools-81.0.0-py3-none-any.whl.metadata (6.6 kB)
+[00:00:46] Collecting networkx>=2.5.1 (from torch>=2.2.0->-r requirements.txt (line 7))
+[00:00:46]   Downloading networkx-3.6.1-py3-none-any.whl.metadata (6.8 kB)
+[00:00:46] Collecting jinja2 (from torch>=2.2.0->-r requirements.txt (line 7))
+[00:00:46]   Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+[00:00:46] Collecting charset_normalizer<4,>=2 (from requests>=2.31->-r requirements.txt (line 10))
+[00:00:46]   Downloading charset_normalizer-3.4.7-cp312-cp312-win_amd64.whl.metadata (41 kB)
+[00:00:46] Collecting urllib3<3,>=1.26 (from requests>=2.31->-r requirements.txt (line 10))
+[00:00:46]   Downloading urllib3-2.6.3-py3-none-any.whl.metadata (6.9 kB)
+[00:00:46] Collecting mpmath<1.4,>=1.1.0 (from sympy->onnxruntime<2,>=1.14->faster-whisper>=1.0->-r requirements.txt (line 3))
+[00:00:46]   Downloading mpmath-1.3.0-py3-none-any.whl.metadata (8.6 kB)
+[00:00:46] Collecting colorama (from tqdm->faster-whisper>=1.0->-r requirements.txt (line 3))
+[00:00:46]   Downloading colorama-0.4.6-py2.py3-none-any.whl.metadata (17 kB)
+[00:00:46] Collecting pycparser (from cffi->sounddevice~=0.5->mediapipe>=0.10->-r requirements.txt (line 4))
+[00:00:46]   Downloading pycparser-3.0-py3-none-any.whl.metadata (8.2 kB)
+[00:00:46] Collecting MarkupSafe>=2.0 (from jinja2->torch>=2.2.0->-r requirements.txt (line 7))
+[00:00:46]   Downloading markupsafe-3.0.3-cp312-cp312-win_amd64.whl.metadata (2.8 kB)
+[00:00:46] Collecting contourpy>=1.0.1 (from matplotlib->mediapipe>=0.10->-r requirements.txt (line 4))
+[00:00:47]   Downloading contourpy-1.3.3-cp312-cp312-win_amd64.whl.metadata (5.5 kB)
+[00:00:47] Collecting cycler>=0.10 (from matplotlib->mediapipe>=0.10->-r requirements.txt (line 4))
+[00:00:47]   Downloading cycler-0.12.1-py3-none-any.whl.metadata (3.8 kB)
+[00:00:47] Collecting fonttools>=4.22.0 (from matplotlib->mediapipe>=0.10->-r requirements.txt (line 4))
+[00:00:47]   Downloading fonttools-4.62.1-cp312-cp312-win_amd64.whl.metadata (119 kB)
+[00:00:47] Collecting kiwisolver>=1.3.1 (from matplotlib->mediapipe>=0.10->-r requirements.txt (line 4))
+[00:00:47]   Downloading kiwisolver-1.5.0-cp312-cp312-win_amd64.whl.metadata (5.2 kB)
+[00:00:47] Collecting pyparsing>=3 (from matplotlib->mediapipe>=0.10->-r requirements.txt (line 4))
+[00:00:47]   Downloading pyparsing-3.3.2-py3-none-any.whl.metadata (5.8 kB)
+[00:00:47] Collecting python-dateutil>=2.7 (from matplotlib->mediapipe>=0.10->-r requirements.txt (line 4))
+[00:00:47]   Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+[00:00:47] Collecting six>=1.5 (from python-dateutil>=2.7->matplotlib->mediapipe>=0.10->-r requirements.txt (line 4))
+[00:00:47]   Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+[00:00:47] INFO: pip is looking at multiple versions of opencv-contrib-python to determine which version is compatible with other requirements. This could take a while.
+[00:00:47] Collecting opencv-contrib-python (from mediapipe>=0.10->-r requirements.txt (line 4))
+[00:00:47]   Downloading opencv_contrib_python-4.13.0.90-cp37-abi3-win_amd64.whl.metadata (20 kB)
+[00:00:47]   Downloading opencv_contrib_python-4.12.0.88-cp37-abi3-win_amd64.whl.metadata (20 kB)
+[00:00:47]   Downloading opencv_contrib_python-4.11.0.86-cp37-abi3-win_amd64.whl.metadata (20 kB)
+[00:00:47] Collecting click>=8.2.1 (from typer->huggingface-hub>=0.20->-r requirements.txt (line 9))
+[00:00:47]   Downloading click-8.3.2-py3-none-any.whl.metadata (2.6 kB)
+[00:00:47] Collecting shellingham>=1.3.0 (from typer->huggingface-hub>=0.20->-r requirements.txt (line 9))
+[00:00:47]   Downloading shellingham-1.5.4-py2.py3-none-any.whl.metadata (3.5 kB)
+[00:00:47] Collecting rich>=12.3.0 (from typer->huggingface-hub>=0.20->-r requirements.txt (line 9))
+[00:00:47]   Downloading rich-14.3.3-py3-none-any.whl.metadata (18 kB)
+[00:00:47] Collecting annotated-doc>=0.0.2 (from typer->huggingface-hub>=0.20->-r requirements.txt (line 9))
+[00:00:47]   Downloading annotated_doc-0.0.4-py3-none-any.whl.metadata (6.6 kB)
+[00:00:47] Collecting markdown-it-py>=2.2.0 (from rich>=12.3.0->typer->huggingface-hub>=0.20->-r requirements.txt (line 9))
+[00:00:47]   Downloading markdown_it_py-4.0.0-py3-none-any.whl.metadata (7.3 kB)
+[00:00:48] Collecting pygments<3.0.0,>=2.13.0 (from rich>=12.3.0->typer->huggingface-hub>=0.20->-r requirements.txt (line 9))
+[00:00:48]   Downloading pygments-2.20.0-py3-none-any.whl.metadata (2.5 kB)
+[00:00:48] Collecting mdurl~=0.1 (from markdown-it-py>=2.2.0->rich>=12.3.0->typer->huggingface-hub>=0.20->-r requirements.txt (line 9))
+[00:00:48]   Downloading mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+[00:00:48] Downloading numpy-1.26.4-cp312-cp312-win_amd64.whl (15.5 MB)
+[00:00:48]    ---------------------------------------- 15.5/15.5 MB 75.2 MB/s  0:00:00
+[00:00:48] Downloading pyside6-6.11.0-cp310-abi3-win_amd64.whl (577 kB)
+[00:00:48]    ---------------------------------------- 578.0/578.0 kB 19.7 MB/s  0:00:00
+[00:00:48] Downloading pyside6_addons-6.11.0-cp310-abi3-win_amd64.whl (168.7 MB)
+[00:00:50]    ---------------------------------------- 168.7/168.7 MB 98.1 MB/s  0:00:01
+[00:00:50] Downloading pyside6_essentials-6.11.0-cp310-abi3-win_amd64.whl (75.8 MB)
+[00:00:50]    ---------------------------------------- 75.8/75.8 MB 92.9 MB/s  0:00:00
+[00:00:50] Downloading shiboken6-6.11.0-cp310-abi3-win_amd64.whl (1.2 MB)
+[00:00:50]    ---------------------------------------- 1.2/1.2 MB 60.0 MB/s  0:00:00
+[00:00:50] Downloading maturin-1.12.6-py3-none-win_amd64.whl (9.9 MB)
+[00:00:51]    ---------------------------------------- 9.9/9.9 MB 102.4 MB/s  0:00:00
+[00:00:51] Downloading faster_whisper-1.2.1-py3-none-any.whl (1.1 MB)
+[00:00:51]    ---------------------------------------- 1.1/1.1 MB 57.1 MB/s  0:00:00
+[00:00:51] Downloading ctranslate2-4.7.1-cp312-cp312-win_amd64.whl (18.8 MB)
+[00:00:51]    ---------------------------------------- 18.8/18.8 MB 79.4 MB/s  0:00:00
+[00:00:51] Downloading onnxruntime-1.24.4-cp312-cp312-win_amd64.whl (12.6 MB)
+[00:00:51]    ---------------------------------------- 12.6/12.6 MB 113.2 MB/s  0:00:00
+[00:00:51] Downloading pyyaml-6.0.3-cp312-cp312-win_amd64.whl (154 kB)
+[00:00:51] Downloading tokenizers-0.22.2-cp39-abi3-win_amd64.whl (2.7 MB)
+[00:00:51]    ---------------------------------------- 2.7/2.7 MB 155.4 MB/s  0:00:00
+[00:00:51] Downloading huggingface_hub-1.9.2-py3-none-any.whl (637 kB)
+[00:00:51]    ---------------------------------------- 637.3/637.3 kB ?  0:00:00
+[00:00:51] Downloading hf_xet-1.4.3-cp37-abi3-win_amd64.whl (3.7 MB)
+[00:00:51]    ---------------------------------------- 3.7/3.7 MB 110.2 MB/s  0:00:00
+[00:00:51] Downloading httpx-0.28.1-py3-none-any.whl (73 kB)
+[00:00:51] Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
+[00:00:51] Downloading mediapipe-0.10.33-py3-none-win_amd64.whl (10.6 MB)
+[00:00:51]    ---------------------------------------- 10.6/10.6 MB 110.9 MB/s  0:00:00
+[00:00:51] Downloading absl_py-2.4.0-py3-none-any.whl (135 kB)
+[00:00:51] Downloading flatbuffers-25.12.19-py2.py3-none-any.whl (26 kB)
+[00:00:51] Downloading sounddevice-0.5.5-py3-none-win_amd64.whl (365 kB)
+[00:00:51] Downloading opencv_python-4.11.0.86-cp37-abi3-win_amd64.whl (39.5 MB)
+[00:00:52]    ---------------------------------------- 39.5/39.5 MB 96.6 MB/s  0:00:00
+[00:00:52] Downloading torch-2.11.0-cp312-cp312-win_amd64.whl (114.6 MB)
+[00:00:53]    ---------------------------------------- 114.6/114.6 MB 98.9 MB/s  0:00:01
+[00:00:53] Downloading setuptools-81.0.0-py3-none-any.whl (1.1 MB)
+[00:00:53]    ---------------------------------------- 1.1/1.1 MB 53.3 MB/s  0:00:00
+[00:00:53] Downloading python_dotenv-1.2.2-py3-none-any.whl (22 kB)
+[00:00:53] Downloading requests-2.33.1-py3-none-any.whl (64 kB)
+[00:00:53] Downloading charset_normalizer-3.4.7-cp312-cp312-win_amd64.whl (159 kB)
+[00:00:53] Downloading idna-3.11-py3-none-any.whl (71 kB)
+[00:00:53] Downloading urllib3-2.6.3-py3-none-any.whl (131 kB)
+[00:00:53] Downloading psutil-7.2.2-cp37-abi3-win_amd64.whl (137 kB)
+[00:00:53] Downloading pillow-12.2.0-cp312-cp312-win_amd64.whl (7.1 MB)
+[00:00:53]    ---------------------------------------- 7.1/7.1 MB 87.5 MB/s  0:00:00
+[00:00:53] Downloading scipy-1.17.1-cp312-cp312-win_amd64.whl (36.5 MB)
+[00:00:54]    ---------------------------------------- 36.5/36.5 MB 86.0 MB/s  0:00:00
+[00:00:54] Downloading av-17.0.0-cp311-abi3-win_amd64.whl (28.9 MB)
+[00:00:54]    ---------------------------------------- 28.9/28.9 MB 87.3 MB/s  0:00:00
+[00:00:54] Downloading certifi-2026.2.25-py3-none-any.whl (153 kB)
+[00:00:54] Downloading fsspec-2026.3.0-py3-none-any.whl (202 kB)
+[00:00:54] Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+[00:00:54] Downloading networkx-3.6.1-py3-none-any.whl (2.1 MB)
+[00:00:54]    ---------------------------------------- 2.1/2.1 MB 112.9 MB/s  0:00:00
+[00:00:54] Downloading packaging-26.0-py3-none-any.whl (74 kB)
+[00:00:54] Downloading sympy-1.14.0-py3-none-any.whl (6.3 MB)
+[00:00:54]    ---------------------------------------- 6.3/6.3 MB 128.5 MB/s  0:00:00
+[00:00:54] Downloading mpmath-1.3.0-py3-none-any.whl (536 kB)
+[00:00:54]    ---------------------------------------- 536.2/536.2 kB 17.1 MB/s  0:00:00
+[00:00:54] Downloading tqdm-4.67.3-py3-none-any.whl (78 kB)
+[00:00:54] Using cached typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+[00:00:54] Downloading anyio-4.13.0-py3-none-any.whl (114 kB)
+[00:00:54] Downloading cffi-2.0.0-cp312-cp312-win_amd64.whl (183 kB)
+[00:00:54] Downloading colorama-0.4.6-py2.py3-none-any.whl (25 kB)
+[00:00:54] Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+[00:00:54] Downloading markupsafe-3.0.3-cp312-cp312-win_amd64.whl (15 kB)
+[00:00:54] Downloading matplotlib-3.10.8-cp312-cp312-win_amd64.whl (8.1 MB)
+[00:00:54]    ---------------------------------------- 8.1/8.1 MB 101.0 MB/s  0:00:00
+[00:00:54] Downloading contourpy-1.3.3-cp312-cp312-win_amd64.whl (226 kB)
+[00:00:54] Downloading cycler-0.12.1-py3-none-any.whl (8.3 kB)
+[00:00:54] Downloading fonttools-4.62.1-cp312-cp312-win_amd64.whl (2.3 MB)
+[00:00:55]    ---------------------------------------- 2.3/2.3 MB 66.8 MB/s  0:00:00
+[00:00:55] Downloading kiwisolver-1.5.0-cp312-cp312-win_amd64.whl (73 kB)
+[00:00:55] Downloading pyparsing-3.3.2-py3-none-any.whl (122 kB)
+[00:00:55] Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+[00:00:55] Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+[00:00:55] Downloading opencv_contrib_python-4.11.0.86-cp37-abi3-win_amd64.whl (46.2 MB)
+[00:00:55]    ---------------------------------------- 46.2/46.2 MB 73.5 MB/s  0:00:00
+[00:00:55] Downloading protobuf-7.34.1-cp310-abi3-win_amd64.whl (437 kB)
+[00:00:55] Downloading pycparser-3.0-py3-none-any.whl (48 kB)
+[00:00:55] Downloading typer-0.24.1-py3-none-any.whl (56 kB)
+[00:00:55] Downloading annotated_doc-0.0.4-py3-none-any.whl (5.3 kB)
+[00:00:55] Downloading click-8.3.2-py3-none-any.whl (108 kB)
+[00:00:55] Downloading rich-14.3.3-py3-none-any.whl (310 kB)
+[00:00:55] Downloading pygments-2.20.0-py3-none-any.whl (1.2 MB)
+[00:00:55]    ---------------------------------------- 1.2/1.2 MB 64.6 MB/s  0:00:00
+[00:00:55] Downloading markdown_it_py-4.0.0-py3-none-any.whl (87 kB)
+[00:00:55] Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+[00:00:55] Downloading shellingham-1.5.4-py2.py3-none-any.whl (9.8 kB)
+[00:00:58] Installing collected packages: mpmath, flatbuffers, urllib3, typing-extensions, sympy, six, shiboken6, shellingham, setuptools, pyyaml, python-dotenv, pyparsing, pygments, pycparser, psutil, protobuf, pillow, packaging, numpy, networkx, mdurl, maturin, MarkupSafe, kiwisolver, idna, hf-xet, h11, fsspec, fonttools, cycler, colorama, charset_normalizer, certifi, av, annotated-doc, absl-py, tqdm, scipy, requests, python-dateutil, PySide6_Essentials, opencv-python, opencv-contrib-python, onnxruntime, markdown-it-py, jinja2, httpcore, ctranslate2, contourpy, click, cffi, anyio, torch, sounddevice, rich, PySide6_Addons, matplotlib, httpx, typer, PySide6, mediapipe, huggingface-hub, tokenizers, faster-whisper
+[00:02:07] 
+[00:02:07] Successfully installed MarkupSafe-3.0.3 PySide6-6.11.0 PySide6_Addons-6.11.0 PySide6_Essentials-6.11.0 absl-py-2.4.0 annotated-doc-0.0.4 anyio-4.13.0 av-17.0.0 certifi-2026.2.25 cffi-2.0.0 charset_normalizer-3.4.7 click-8.3.2 colorama-0.4.6 contourpy-1.3.3 ctranslate2-4.7.1 cycler-0.12.1 faster-whisper-1.2.1 flatbuffers-25.12.19 fonttools-4.62.1 fsspec-2026.3.0 h11-0.16.0 hf-xet-1.4.3 httpcore-1.0.9 httpx-0.28.1 huggingface-hub-1.9.2 idna-3.11 jinja2-3.1.6 kiwisolver-1.5.0 markdown-it-py-4.0.0 matplotlib-3.10.8 maturin-1.12.6 mdurl-0.1.2 mediapipe-0.10.33 mpmath-1.3.0 networkx-3.6.1 numpy-1.26.4 onnxruntime-1.24.4 opencv-contrib-python-4.11.0.86 opencv-python-4.11.0.86 packaging-26.0 pillow-12.2.0 protobuf-7.34.1 psutil-7.2.2 pycparser-3.0 pygments-2.20.0 pyparsing-3.3.2 python-dateutil-2.9.0.post0 python-dotenv-1.2.2 pyyaml-6.0.3 requests-2.33.1 rich-14.3.3 scipy-1.17.1 setuptools-81.0.0 shellingham-1.5.4 shiboken6-6.11.0 six-1.17.0 sounddevice-0.5.5 sympy-1.14.0 tokenizers-0.22.2 torch-2.11.0 tqdm-4.67.3 typer-0.24.1 typing-extensions-4.15.0 urllib3-2.6.3
+[00:02:08] pip install pyinstaller
+[00:02:09] Collecting pyinstaller
+[00:02:09]   Downloading pyinstaller-6.19.0-py3-none-win_amd64.whl.metadata (8.5 kB)
+[00:02:09] Collecting altgraph (from pyinstaller)
+[00:02:09]   Downloading altgraph-0.17.5-py2.py3-none-any.whl.metadata (7.5 kB)
+[00:02:09] Requirement already satisfied: packaging>=22.0 in C:\Python312-x64\Lib\site-packages (from pyinstaller) (26.0)
+[00:02:09] Collecting pefile>=2022.5.30 (from pyinstaller)
+[00:02:09]   Downloading pefile-2024.8.26-py3-none-any.whl.metadata (1.4 kB)
+[00:02:09] Collecting pyinstaller-hooks-contrib>=2026.0 (from pyinstaller)
+[00:02:09]   Downloading pyinstaller_hooks_contrib-2026.4-py3-none-any.whl.metadata (16 kB)
+[00:02:10] Collecting pywin32-ctypes>=0.2.1 (from pyinstaller)
+[00:02:10]   Downloading pywin32_ctypes-0.2.3-py3-none-any.whl.metadata (3.9 kB)
+[00:02:10] Requirement already satisfied: setuptools>=42.0.0 in C:\Python312-x64\Lib\site-packages (from pyinstaller) (81.0.0)
+[00:02:10] Downloading pyinstaller-6.19.0-py3-none-win_amd64.whl (1.4 MB)
+[00:02:10]    ---------------------------------------- 1.4/1.4 MB 8.0 MB/s  0:00:00
+[00:02:10] Downloading pefile-2024.8.26-py3-none-any.whl (74 kB)
+[00:02:10] Downloading pyinstaller_hooks_contrib-2026.4-py3-none-any.whl (455 kB)
+[00:02:10] Downloading pywin32_ctypes-0.2.3-py3-none-any.whl (30 kB)
+[00:02:10] Downloading altgraph-0.17.5-py2.py3-none-any.whl (21 kB)
+[00:02:10] Installing collected packages: altgraph, pywin32-ctypes, pyinstaller-hooks-contrib, pefile, pyinstaller
+[00:02:12] 
+[00:02:12] Successfully installed altgraph-0.17.5 pefile-2024.8.26 pyinstaller-6.19.0 pyinstaller-hooks-contrib-2026.4 pywin32-ctypes-0.2.3
+[00:02:12] cd core-engine
+[00:02:13] maturin build --release
+[00:02:13]     Updating crates.io index
+[00:02:13]  Downloading crates ...
+[00:02:13]   Downloaded autocfg v1.5.0
+[00:02:13]   Downloaded memoffset v0.9.1
+[00:02:13]   Downloaded cfg-if v1.0.4
+[00:02:13]   Downloaded unindent v0.2.4
+[00:02:13]   Downloaded zmij v1.0.21
+[00:02:13]   Downloaded indoc v2.0.7
+[00:02:13]   Downloaded serde_core v1.0.228
+[00:02:13]   Downloaded unicode-ident v1.0.24
+[00:02:13]   Downloaded serde v1.0.228
+[00:02:13]   Downloaded pyo3-macros-backend v0.23.5
+[00:02:13]   Downloaded pyo3-ffi v0.23.5
+[00:02:13]   Downloaded memchr v2.8.0
+[00:02:13]   Downloaded serde_json v1.0.149
+[00:02:13]   Downloaded proc-macro2 v1.0.106
+[00:02:13]   Downloaded pyo3-build-config v0.23.5
+[00:02:13]   Downloaded portable-atomic v1.13.1
+[00:02:13]   Downloaded once_cell v1.21.4
+[00:02:14]   Downloaded target-lexicon v0.12.16
+[00:02:14]   Downloaded serde_derive v1.0.228
+[00:02:14]   Downloaded rustversion v1.0.22
+[00:02:14]   Downloaded syn v2.0.117
+[00:02:14]   Downloaded quote v1.0.45
+[00:02:14]   Downloaded pyo3-macros v0.23.5
+[00:02:14]   Downloaded itoa v1.0.18
+[00:02:14]   Downloaded heck v0.5.0
+[00:02:14]   Downloaded anyhow v1.0.102
+[00:02:14]   Downloaded libc v0.2.184
+[00:02:14]   Downloaded pyo3 v0.23.5
+[00:02:14] 🔗 Found pyo3 bindings
+[00:02:14] 🐍 Found CPython 3.12 at C:\Python312-x64\python.exe
+[00:02:14] 📡 Using build options features from pyproject.toml
+[00:02:15]    Compiling target-lexicon v0.12.16
+[00:02:15]    Compiling once_cell v1.21.4
+[00:02:15]    Compiling proc-macro2 v1.0.106
+[00:02:16]    Compiling quote v1.0.45
+[00:02:17]    Compiling unicode-ident v1.0.24
+[00:02:17]    Compiling pyo3-build-config v0.23.5
+[00:02:19]    Compiling syn v2.0.117
+[00:02:20]    Compiling pyo3-macros-backend v0.23.5
+[00:02:20]    Compiling pyo3-ffi v0.23.5
+[00:02:21]    Compiling autocfg v1.5.0
+[00:02:21]    Compiling libc v0.2.184
+[00:02:22]    Compiling serde_core v1.0.228
+[00:02:23]    Compiling memoffset v0.9.1
+[00:02:23]    Compiling heck v0.5.0
+[00:02:23]    Compiling zmij v1.0.21
+[00:02:30]    Compiling pyo3 v0.23.5
+[00:02:30]    Compiling serde_json v1.0.149
+[00:02:30]    Compiling anyhow v1.0.102
+[00:02:31]    Compiling serde v1.0.228
+[00:02:31]    Compiling serde_derive v1.0.228
+[00:02:38]    Compiling pyo3-macros v0.23.5
+[00:02:39]    Compiling cfg-if v1.0.4
+[00:02:39]    Compiling unindent v0.2.4
+[00:02:39]    Compiling indoc v2.0.7
+[00:02:40]    Compiling memchr v2.8.0
+[00:02:40]    Compiling itoa v1.0.18
+[00:02:55]    Compiling clipperr_core v0.1.0 (C:\projects\clipperr\core-engine)
+[00:02:58]     Finished `release` profile [optimized] target(s) in 43.93s
+[00:02:58] 📦 Built wheel for CPython 3.12 to C:\projects\clipperr\core-engine\target\wheels\clipperr_core-0.1.0-cp312-cp312-win_amd64.whl
+[00:02:58] Get-ChildItem target/wheels/*.whl | ForEach-Object { pip install $_.FullName }
+[00:03:00] Processing .\target\wheels\clipperr_core-0.1.0-cp312-cp312-win_amd64.whl
+[00:03:00] Installing collected packages: clipperr-core
+[00:03:00] Successfully installed clipperr-core-0.1.0
+[00:03:00] cd ..
+[00:03:00] pyinstaller --noconfirm clipperr.spec
+[00:03:01] 203 INFO: PyInstaller: 6.19.0, contrib hooks: 2026.4
+[00:03:01] 203 INFO: Python: 3.12.10
+[00:03:01] 234 INFO: Platform: Windows-2019Server-10.0.17763-SP0
+[00:03:01] 234 INFO: Python environment: C:\Python312-x64
+[00:03:01] 234 INFO: Module search paths (PYTHONPATH):
+[00:03:01] ['C:\\Python312-x64\\Scripts\\pyinstaller.exe',
+[00:03:01]  'C:\\Python312-x64\\python312.zip',
+[00:03:01]  'C:\\Python312-x64\\DLLs',
+[00:03:01]  'C:\\Python312-x64\\Lib',
+[00:03:01]  'C:\\Python312-x64',
+[00:03:01]  'C:\\Python312-x64\\Lib\\site-packages',
+[00:03:01]  'C:\\projects\\clipperr',
+[00:03:01]  'C:\\projects\\clipperr\\app']
+[00:03:01] 749 INFO: Appending 'binaries' from .spec
+[00:03:01] 749 INFO: Appending 'datas' from .spec
+[00:03:01] 749 INFO: checking Analysis
+[00:03:01] 749 INFO: Building Analysis because Analysis-00.toc is non existent
+[00:03:01] 749 INFO: Looking for Python shared library...
+[00:03:01] 749 INFO: Using Python shared library: C:\Python312-x64\python312.dll
+[00:03:01] 749 INFO: Running Analysis Analysis-00.toc
+[00:03:01] 749 INFO: Target bytecode optimization level: 0
+[00:03:01] 749 INFO: Initializing module dependency graph...
+[00:03:01] 749 INFO: Initializing module graph hook caches...
+[00:03:01] 781 INFO: Analyzing modules for base_library.zip ...
+[00:03:03] 2871 INFO: Processing standard module hook 'hook-encodings.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:03:07] 6382 INFO: Processing standard module hook 'hook-pickle.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:03:10] 9214 INFO: Processing standard module hook 'hook-heapq.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:03:11] 10122 INFO: Caching module dependency graph...
+[00:03:11] 10216 INFO: Analyzing C:\projects\clipperr\app\main.py
+[00:03:11] 10231 INFO: Processing standard module hook 'hook-certifi.py' from 'C:\\Python312-x64\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+[00:03:11] 10247 INFO: Processing standard module hook 'hook-PySide6.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:03:11] 10591 INFO: Processing standard module hook 'hook-shiboken6.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:03:11] 10997 INFO: Processing standard module hook 'hook-PySide6.QtNetwork.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:03:18] 17186 INFO: Processing standard module hook 'hook-PySide6.QtCore.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:03:26] 25251 INFO: Processing standard module hook 'hook-PySide6.QtWidgets.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:03:33] 32261 INFO: Processing standard module hook 'hook-PySide6.QtGui.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:21] 80060 INFO: Processing standard module hook 'hook-PySide6.QtMultimedia.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:23] 82435 INFO: Processing standard module hook 'hook-PySide6.QtMultimediaWidgets.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:23] 82994 INFO: Processing standard module hook 'hook-urllib3.py' from 'C:\\Python312-x64\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+[00:04:24] 83228 INFO: Processing pre-safe-import-module hook 'hook-backports.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+[00:04:24] 83228 INFO: SetuptoolsInfo: initializing cached setuptools info...
+[00:04:24] 83826 INFO: Setuptools: 'backports' appears to be a full setuptools-vendored copy - creating alias to 'setuptools._vendor.backports'!
+[00:04:24] 83841 INFO: Processing pre-safe-import-module hook 'hook-typing_extensions.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+[00:04:25] 84169 INFO: Processing standard module hook 'hook-multiprocessing.util.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:25] 84263 INFO: Processing standard module hook 'hook-xml.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:25] 84560 INFO: Processing standard module hook 'hook-_ctypes.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:26] 85858 INFO: Processing standard module hook 'hook-charset_normalizer.py' from 'C:\\Python312-x64\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+[00:04:27] 86608 INFO: Processing standard module hook 'hook-anyio.py' from 'C:\\Python312-x64\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+[00:04:28] 88025 INFO: Processing standard module hook 'hook-platform.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:29] 88103 INFO: Processing standard module hook 'hook-difflib.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:29] 88197 INFO: Processing standard module hook 'hook-pygments.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:30] 89340 INFO: Processing standard module hook 'hook-rich.py' from 'C:\\Python312-x64\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+[00:04:31] 90954 INFO: Processing standard module hook 'hook-sysconfig.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:32] 91329 INFO: Processing pre-safe-import-module hook 'hook-importlib_metadata.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+[00:04:32] 91329 INFO: Setuptools: 'importlib_metadata' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.importlib_metadata'!
+[00:04:32] 91329 INFO: Processing pre-safe-import-module hook 'hook-importlib_resources.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+[00:04:32] 91376 INFO: Processing standard module hook 'hook-matplotlib.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:32] 91829 INFO: Processing pre-safe-import-module hook 'hook-packaging.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+[00:04:32] 91970 INFO: Processing standard module hook 'hook-numpy.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:34] 93065 INFO: Processing standard module hook 'hook-psutil.py' from 'C:\\Python312-x64\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+[00:04:35] 94533 INFO: Processing pre-safe-import-module hook 'hook-gi.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+[00:04:35] 94798 INFO: Processing standard module hook 'hook-matplotlib.backend_bases.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:35] 94956 INFO: Processing standard module hook 'hook-PIL.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:36] 95081 INFO: Processing standard module hook 'hook-PIL.Image.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:36] 95487 INFO: Processing standard module hook 'hook-xml.etree.cElementTree.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:36] 95722 INFO: Processing standard module hook 'hook-PIL.ImageFilter.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:37] 96705 INFO: Processing standard module hook 'hook-jinja2.py' from 'C:\\Python312-x64\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+[00:04:38] 97751 INFO: Processing standard module hook 'hook-matplotlib.backends.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:38] 97884 INFO: Processing standard module hook 'hook-matplotlib.pyplot.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:04:40] 99195 INFO: Processing standard module hook 'hook-dateutil.py' from 'C:\\Python312-x64\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+[00:04:40] 99493 INFO: Processing pre-safe-import-module hook 'hook-six.moves.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+[00:04:45] 104351 INFO: Processing standard module hook 'hook-torch.py' from 'C:\\Python312-x64\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+[00:04:56] 2422 WARNING: Failed to collect submodules for 'torch.utils.tensorboard' because importing 'torch.utils.tensorboard' raised: ModuleNotFoundError: No module named 'tensorboard'
+[00:04:59] W0409 12:20:34.564000 940 site-packages\torch\distributed\elastic\multiprocessing\redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+[00:04:59] C:\Python312-x64\Lib\site-packages\PyInstaller\utils\hooks\__init__.py:665: DeprecationWarning: `torch.distributed._sharding_spec` will be deprecated, use `torch.distributed._shard.sharding_spec` instead
+[00:04:59]   __import__(name)
+[00:04:59] C:\Python312-x64\Lib\site-packages\PyInstaller\utils\hooks\__init__.py:665: DeprecationWarning: `torch.distributed._sharded_tensor` will be deprecated, use `torch.distributed._shard.sharded_tensor` instead
+[00:04:59]   __import__(name)
+[00:04:59] C:\Python312-x64\Lib\site-packages\PyInstaller\utils\hooks\__init__.py:665: DeprecationWarning: `torch.distributed._shard.checkpoint` will be deprecated, use `torch.distributed.checkpoint` instead
+[00:04:59]   __import__(name)
+[00:05:02] 121193 INFO: hook-torch: this torch build does not depend on MKL...
+[00:05:15] 134407 INFO: Processing standard module hook 'hook-scipy.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:05:16] 135073 INFO: Processing standard module hook 'hook-pycparser.py' from 'C:\\Python312-x64\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+[00:05:16] 135268 INFO: Processing pre-safe-import-module hook 'hook-distutils.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+[00:05:16] 135566 INFO: Processing standard module hook 'hook-scipy.linalg.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:05:25] 144566 INFO: Processing pre-safe-import-module hook 'hook-win32com.py' from 'C:\\Python312-x64\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\pre_safe_import_module'
+[00:05:25] 144897 INFO: Processing standard module hook 'hook-sqlite3.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:05:28] 147182 INFO: Processing standard module hook 'hook-scipy.special._ufuncs.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:05:29] 148212 INFO: Processing standard module hook 'hook-scipy.special._ellip_harm_2.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:05:39] 158185 INFO: Processing standard module hook 'hook-fsspec.py' from 'C:\\Python312-x64\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+[00:05:58] 177689 INFO: Processing standard module hook 'hook-scipy.spatial._ckdtree.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:05:59] 178379 INFO: Processing standard module hook 'hook-scipy.spatial.transform.rotation.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:06:00] 179643 INFO: Processing standard module hook 'hook-scipy.stats._stats.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:06:01] 180369 INFO: Processing standard module hook 'hook-scipy.sparse.csgraph.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:06:04] 183152 INFO: Processing standard module hook 'hook-xml.dom.domreg.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:06:06] 185171 INFO: Processing standard module hook 'hook-scipy.io.matlab.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:06:07] 186944 INFO: Processing standard module hook 'hook-onnxruntime.py' from 'C:\\Python312-x64\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+[00:06:08] 187084 INFO: Processing pre-safe-import-module hook 'hook-tensorflow.py' from 'C:\\Python312-x64\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\pre_safe_import_module'
+[00:06:10] 189275 INFO: Processing standard module hook 'hook-cv2.py' from 'C:\\Python312-x64\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+[00:06:11] 190079 INFO: Processing standard module hook 'hook-av.py' from 'C:\\Python312-x64\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+[00:06:12] 191883 INFO: Processing standard module hook 'hook-sounddevice.py' from 'C:\\Python312-x64\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+[00:06:13] 192648 INFO: Analyzing hidden import 'torchcodec'
+[00:06:13] 192649 ERROR: Hidden import 'torchcodec' not found
+[00:06:13] 192649 INFO: Processing module hooks (post-graph stage)...
+[00:06:15] 194072 WARNING: Hidden import "pycparser.lextab" not found!
+[00:06:15] 194072 WARNING: Hidden import "pycparser.yacctab" not found!
+[00:06:32] 211565 INFO: Processing standard module hook 'hook-matplotlib.backends.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:06:32] 211565 INFO: Matplotlib backend selection method: automatic discovery of used backends
+[00:06:32] 211628 INFO: Discovered Matplotlib backend(s) via `matplotlib.use()` call in module 'sympy.testing.runtests': ['Agg', 'Agg']
+[00:06:32] 211628 INFO: The following Matplotlib backends were discovered by scanning for `matplotlib.use()` calls: ['Agg']. If your backend of choice is not in this list, either add a `matplotlib.use()` call to your code, or configure the backend collection via hook options (see: https://pyinstaller.org/en/stable/hooks-config.html#matplotlib-hooks).
+[00:06:32] 211628 INFO: Selected matplotlib backends: ['Agg']
+[00:06:32] 211955 INFO: Processing standard module hook 'hook-PIL.SpiderImagePlugin.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:06:36] 215208 WARNING: Hidden import "scipy.special._cdflib" not found!
+[00:06:36] 215317 INFO: Performing binary vs. data reclassification (433 entries)
+[00:06:36] 215457 INFO: Looking for ctypes DLLs
+[00:06:36] 215601 WARNING: Library nvcuda.dll required via ctypes not found
+[00:06:36] 215752 WARNING: Ignoring /usr/lib64/libgomp.so.1 imported from C:\Python312-x64\Lib\site-packages\torch\_inductor\codecache.py - only basenames are supported with ctypes imports!
+[00:06:37] 216410 INFO: Analyzing run-time hooks ...
+[00:06:37] 216441 INFO: Including run-time hook 'pyi_rth_inspect.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+[00:06:37] 216441 INFO: Including run-time hook 'pyi_rth_pkgutil.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+[00:06:37] 216456 INFO: Including run-time hook 'pyi_rth_multiprocessing.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+[00:06:37] 216456 INFO: Including run-time hook 'pyi_rth_mplconfig.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+[00:06:37] 216456 INFO: Processing pre-find-module-path hook 'hook-_pyi_rth_utils.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks\\pre_find_module_path'
+[00:06:37] 216456 INFO: Processing standard module hook 'hook-_pyi_rth_utils.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks'
+[00:06:37] 216472 INFO: Including run-time hook 'pyi_rth_pyside6.py' from 'C:\\Python312-x64\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+[00:06:37] 216691 INFO: Creating base_library.zip...
+[00:06:38] 217894 INFO: Looking for dynamic libraries
+[00:06:40] C:\Python312-x64\Lib\site-packages\PyInstaller\building\build_main.py:227: UserWarning: The numpy.array_api submodule is still experimental. See NEP 47.
+[00:06:40]   __import__(package)
+[00:06:49] W0409 12:22:25.291000 1556 site-packages\torch\distributed\elastic\multiprocessing\redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+[00:06:53] C:\Python312-x64\Lib\site-packages\PyInstaller\building\build_main.py:227: DeprecationWarning: `torch.distributed._sharding_spec` will be deprecated, use `torch.distributed._shard.sharding_spec` instead
+[00:06:53]   __import__(package)
+[00:06:53] C:\Python312-x64\Lib\site-packages\PyInstaller\building\build_main.py:227: DeprecationWarning: `torch.distributed._sharded_tensor` will be deprecated, use `torch.distributed._shard.sharded_tensor` instead
+[00:06:53]   __import__(package)
+[00:06:53] C:\Python312-x64\Lib\site-packages\PyInstaller\building\build_main.py:227: DeprecationWarning: `torch.distributed._shard.checkpoint` will be deprecated, use `torch.distributed.checkpoint` instead
+[00:06:53]   __import__(package)
+[00:06:56] 235195 INFO: Extra DLL search directories (AddDllDirectory): ['C:\\Python312-x64\\Lib\\site-packages\\shiboken6', 'C:\\Python312-x64\\Lib\\site-packages\\numpy.libs', 'C:\\Python312-x64\\Lib\\site-packages\\torch\\lib', 'C:\\Python312-x64\\Lib\\site-packages\\scipy.libs', 'C:\\Python312-x64\\Lib\\site-packages\\cv2\\../../x64/vc14/bin', 'C:\\Python312-x64\\Lib\\site-packages\\av.libs', 'C:\\Python312-x64\\Lib\\site-packages\\ctranslate2', 'C:\\Python312-x64\\Lib\\site-packages\\ctranslate2/../_rocm_sdk_core/bin']
+[00:06:56] 235195 INFO: Extra DLL search directories (PATH): ['C:\\Python312-x64\\Lib\\site-packages\\cv2\\../../x64/vc14/bin', 'C:\\Python312-x64\\Lib\\site-packages\\PySide6']
+[00:07:03] 242430 INFO: Warnings written to C:\projects\clipperr\build\clipperr\warn-clipperr.txt
+[00:07:04] 243570 INFO: Graph cross-reference written to C:\projects\clipperr\build\clipperr\xref-clipperr.html
+[00:07:04] 243914 INFO: checking PYZ
+[00:07:04] 243914 INFO: Building PYZ because PYZ-00.toc is non existent
+[00:07:04] 243914 INFO: Building PYZ (ZlibArchive) C:\projects\clipperr\build\clipperr\PYZ-00.pyz
+[00:07:12] 251768 INFO: Building PYZ (ZlibArchive) C:\projects\clipperr\build\clipperr\PYZ-00.pyz completed successfully.
+[00:07:12] 251940 INFO: checking PKG
+[00:07:12] 251940 INFO: Building PKG because PKG-00.toc is non existent
+[00:07:12] 251940 INFO: Building PKG (CArchive) clipperr.pkg
+[00:07:12] 252018 INFO: Building PKG (CArchive) clipperr.pkg completed successfully.
+[00:07:12] 252018 INFO: Bootloader C:\Python312-x64\Lib\site-packages\PyInstaller\bootloader\Windows-64bit-intel\runw.exe
+[00:07:12] 252018 INFO: checking EXE
+[00:07:12] 252018 INFO: Building EXE because EXE-00.toc is non existent
+[00:07:12] 252018 INFO: Building EXE from EXE-00.toc
+[00:07:12] 252018 INFO: Copying bootloader EXE to C:\projects\clipperr\build\clipperr\clipperr.exe
+[00:07:12] 252018 INFO: Copying icon to EXE
+[00:07:13] 252175 INFO: Copying 0 resources to EXE
+[00:07:13] 252175 INFO: Embedding manifest in EXE
+[00:07:13] 252175 INFO: Appending PKG archive to EXE
+[00:07:13] 252204 INFO: Fixing EXE headers
+[00:07:13] 252712 INFO: Building EXE from EXE-00.toc completed successfully.
+[00:07:13] 252759 INFO: checking COLLECT
+[00:07:13] 252759 INFO: Building COLLECT because COLLECT-00.toc is non existent
+[00:07:13] 252759 INFO: Building COLLECT COLLECT-00.toc
+[00:07:16] 255503 INFO: Building COLLECT COLLECT-00.toc completed successfully.
+[00:07:16] 255581 INFO: Build complete! The results are available in: C:\projects\clipperr\dist
+[00:07:17] Compress-Archive -Path dist/clipperr/* -DestinationPath clipperr-windows-v1.0.zip
+[00:08:14] Discovering tests...OK
+[00:08:14] Collecting artifacts...
+[00:08:14] Found artifact 'clipperr-windows-v1.0.zip' matching 'clipperr-windows-v1.0.zip' path
+[00:08:14] Uploading artifacts...
+[00:08:14] 
+[00:08:14] [1/1] clipperr-windows-v1.0.zip (361,087,660 bytes)...1%
+[00:08:14] [1/1] clipperr-windows-v1.0.zip (361,087,660 bytes)...10%
+[00:08:15] [1/1] clipperr-windows-v1.0.zip (361,087,660 bytes)...20%
+[00:08:15] [1/1] clipperr-windows-v1.0.zip (361,087,660 bytes)...30%
+[00:08:15] [1/1] clipperr-windows-v1.0.zip (361,087,660 bytes)...40%
+[00:08:15] [1/1] clipperr-windows-v1.0.zip (361,087,660 bytes)...50%
+[00:08:15] [1/1] clipperr-windows-v1.0.zip (361,087,660 bytes)...60%
+[00:08:16] [1/1] clipperr-windows-v1.0.zip (361,087,660 bytes)...70%
+[00:08:16] [1/1] clipperr-windows-v1.0.zip (361,087,660 bytes)...80%
+[00:08:16] [1/1] clipperr-windows-v1.0.zip (361,087,660 bytes)...90%
+[00:08:16] [1/1] clipperr-windows-v1.0.zip (361,087,660 bytes)...100%
+[00:08:16] if ($env:APPVEYOR_REPO_TAG -eq "true") {
+[00:08:16]   echo "Uploading release asset for tag $($env:APPVEYOR_REPO_TAG_NAME)..."
+[00:08:16]   & "C:\Program Files\GitHub CLI\gh.exe" release upload $($env:APPVEYOR_REPO_TAG_NAME) clipperr-windows-v1.0.zip --clobber
+[00:08:16] }
+[00:08:16] 
+[00:08:16] Uploading release asset for tag v1.1.3...
+[00:08:17] gh.exe : HTTP 401: Bad credentials (https://api.github.com/repos/rasyiqi-code/clipperr/releases/tags/v1.1.3)
+[00:08:17] At line:3 char:3
+[00:08:17] +   & "C:\Program Files\GitHub CLI\gh.exe" release upload $($env:APPVEY ...
+[00:08:17] +   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[00:08:17]     + CategoryInfo          : NotSpecified: (HTTP 401: Bad c...es/tags/v1.1.3):String) [], RemoteException
+[00:08:17]     + FullyQualifiedErrorId : NativeCommandError
+[00:08:17]  
+[00:08:17] Try authenticating with:  gh auth login
+[00:08:17] 
+[00:08:17] Command executed with exception: Try authenticating with:  gh auth login
+[00:08:17] 
