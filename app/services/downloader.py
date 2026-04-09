@@ -1,6 +1,8 @@
 import os
 import requests
 import certifi
+import zipfile
+import shutil
 
 from huggingface_hub import hf_hub_download, snapshot_download
 from PySide6.QtCore import QObject, QThread, Signal
@@ -24,14 +26,12 @@ class DownloadWorker(QObject):
             # Use snapshot_download for better reliability (handles partials and full repos)
             self.progress_signal.emit(f"Verifying/Downloading: {repo_id}...", 30)
             
-            # For faster-whisper and LLMs, we want specific weight formats if possible
-            # but snapshot handles directory mapping much better than hf_hub_download manually
+            # Strictly anonymous for now as per user request
             snapshot_download(
                 repo_id=repo_id,
                 local_dir=local_dir,
-                token=token,
-                local_dir_use_symlinks=False, # Essential for Windows non-admin
-                # avoid redundant weight formats for whisper
+                token=None, # Forcing None to ensure it works anonymously
+                local_dir_use_symlinks=False, 
                 ignore_patterns=["*.msgpack", "*.h5", "*.ot", "*.ckpt", "*.safetensors"] if "whisper" in repo_id else []
             )
 
@@ -43,13 +43,8 @@ class DownloadWorker(QObject):
             error_msg = str(exc)
             log.error("Download failed for %s: %s", repo_id, error_msg)
             
-            # User-friendly mapping for common errors
             if "401" in error_msg or "Unauthorized" in error_msg:
-                display_msg = "Error: Auth Failed (Check Token)"
-            elif "1314" in error_msg or "required privilege" in error_msg:
-                display_msg = "Error: Permission Denied (Disable Symlinks)"
-            elif "CERTIFICATE_VERIFY_FAILED" in error_msg:
-                display_msg = "Error: SSL Verification Failed"
+                display_msg = "Error: Auth Required (Gated Model?)"
             else:
                 display_msg = f"Error: {error_msg[:60]}..." if len(error_msg) > 60 else f"Error: {error_msg}"
 
@@ -76,12 +71,22 @@ class DownloadWorker(QObject):
                             if chunk:
                                 dl += len(chunk)
                                 f.write(chunk)
-                                done = int(80 * dl / total_length)
+                                done = int(70 * dl / total_length) # 10-80% for download
                                 self.progress_signal.emit(f"Downloading {filename}...", 10 + done)
             
-            self.progress_signal.emit("Download complete!", 100)
+            # Auto-extract if it's a ZIP
+            if filename.endswith(".zip"):
+                self.progress_signal.emit("Extracting files...", 85)
+                with zipfile.ZipFile(filepath, 'r') as zip_ref:
+                    # Extract to a temp dir then move files if needed, or to local_dir directly
+                    zip_ref.extractall(local_dir)
+                
+                # Cleanup zip file
+                os.remove(filepath)
+                
+            self.progress_signal.emit("Download and setup complete!", 100)
             self.finished_signal.emit(filename, True)
-            log.info("URL download complete: %s", filepath)
+            log.info("URL download complete: %s", local_dir)
 
         except Exception as exc:
             log.error("URL download failed: %s", exc)
@@ -115,7 +120,7 @@ class ModelManager:
     def __init__(self):
         self.models = {
             "whisper-base": {
-                "repo": "Systran/faster-whisper-base",
+                "url": "https://github.com/Purfview/whisper-standalone-win/releases/download/libs/whisper-base.zip",
                 "files": ["model.bin", "config.json", "vocabulary.txt"],
                 "path": config.WHISPER_MODEL_PATH,
             },
@@ -126,7 +131,7 @@ class ModelManager:
             },
             "blazeface": {
                 "url": "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
-                "files": ["blaze_face_full_range.tflite"],
+                "files": ["blaze_face_short_range.tflite"],
                 "path": os.path.dirname(config.BLAZEFACE_MODEL_PATH),
             },
             "yunet-face": {

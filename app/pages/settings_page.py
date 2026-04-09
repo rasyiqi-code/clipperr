@@ -360,25 +360,9 @@ class SettingsPage(QScrollArea):
         section_title.setStyleSheet("font-size: 18px; font-weight: 700; color: #38bdf8;")
         layout.addWidget(section_title)
 
-        # Token input
-        token_layout = QHBoxLayout()
-        token_label = QLabel("HF Access Token (Optional):")
-        token_label.setStyleSheet("color: #94a3b8; font-size: 13px;")
-        self.token_input = QLineEdit()
-        self.token_input.setPlaceholderText("hf_...")
-        self.token_input.setEchoMode(QLineEdit.Password)
-        self.token_input.setStyleSheet(
-            "background-color: #0f172a; border: 1px solid #1e293b; "
-            "border-radius: 5px; padding: 5px;"
-        )
-        self.token_input.setText(prefs.hf_token)
-        self.token_input.textChanged.connect(self._on_token_changed)
-        token_layout.addWidget(token_label)
-        token_layout.addWidget(self.token_input)
-        layout.addLayout(token_layout)
-
-        info_label = QLabel("Note: LLM Analysis model is optimized for CPU-only and older hardware.")
-        info_label.setStyleSheet("color: #64748b; font-size: 11px; font-style: italic;")
+        # Informational note about models
+        info_label = QLabel("Note: AI models will be downloaded automatically from public repositories (HuggingFace/GitHub).")
+        info_label.setStyleSheet("color: #64748b; font-size: 11px; font-style: italic; margin-top: 10px;")
         layout.addWidget(info_label)
 
         # Model cards
@@ -413,10 +397,6 @@ class SettingsPage(QScrollArea):
             )
             self._refresh_model_ui(model_id)
 
-    def _on_token_changed(self, text):
-        from config import prefs
-        prefs.hf_token = text
-        prefs.save()
 
     # ══════════════════════════════════════════════════
     #  Torch dependency
@@ -465,7 +445,7 @@ class SettingsPage(QScrollArea):
     def _start_download(self, model_id: str):
         status_label, btn = self._model_ui[model_id]
         info = self.model_manager.models[model_id]
-        token = self.token_input.text().strip() or None
+        token = None # All downloads are now anonymous
 
         btn.setEnabled(False)
         status_label.setText("📥 Starting...")
@@ -501,7 +481,9 @@ class SettingsPage(QScrollArea):
         self._refresh_model_ui(model_id)
         if not success:
             status_label, _btn = self._model_ui[model_id]
-            status_label.setText("❌ Error")
+            # If the status label already has a specific error message from the worker, don't overwrite it
+            if not status_label.text().startswith("📥 [0%] Error:"):
+                status_label.setText("❌ Error")
             status_label.setStyleSheet("color: #ef4444; font-weight: bold;")
 
     # ── Public helpers ───────────────────────────────
