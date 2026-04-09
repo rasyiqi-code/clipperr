@@ -54,6 +54,12 @@ artifacts:
 deploy_script:
   - ps: |
       if ($env:APPVEYOR_REPO_TAG -eq "true") {
-        echo "Uploading release asset for tag $($env:APPVEYOR_REPO_TAG_NAME)..."
+        if (-not $env:GH_TOKEN) { 
+          Write-Error "GH_TOKEN tidak ditemukan di lingkungan AppVeyor!" 
+          exit 1
+        }
+        echo "Melakukan autentikasi GitHub CLI..."
+        echo $env:GH_TOKEN | & "C:\Program Files\GitHub CLI\gh.exe" auth login --with-token
+        echo "Mengunggah aset rilis untuk tag $($env:APPVEYOR_REPO_TAG_NAME)..."
         & "C:\Program Files\GitHub CLI\gh.exe" release upload $($env:APPVEYOR_REPO_TAG_NAME) clipperr-windows-v1.0.zip --clobber
       }
