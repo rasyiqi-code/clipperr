@@ -2,9 +2,10 @@ import os
 import requests
 import certifi
 
-from huggingface_hub import hf_hub_download
+from huggingface_hub import hf_hub_download, snapshot_download
 from PySide6.QtCore import QObject, QThread, Signal
 
+import config
 from logger import get_logger
 
 log = get_logger(__name__)
@@ -20,27 +21,21 @@ class DownloadWorker(QObject):
         try:
             os.makedirs(local_dir, exist_ok=True)
             
-            if not filenames:
-                # If no specific files are listed, download the whole repo to the HF cache
-                from huggingface_hub import snapshot_download
-                self.progress_signal.emit(f"Downloading full repository: {repo_id} (this may take a while)...", 50)
-                snapshot_download(
-                    repo_id=repo_id,
-                    token=token,
-                    ignore_patterns=["*.msgpack", "*.h5", "*.ot", "*.ckpt"] # avoid redundant weight formats
-                )
-            else:
-                total = len(filenames)
-                for i, filename in enumerate(filenames):
-                    self.progress_signal.emit(f"Downloading {i+1}/{total}: {filename}...", int((i / total) * 100))
-                    hf_hub_download(
-                        repo_id=repo_id,
-                        filename=filename,
-                        local_dir=local_dir,
-                        token=token,
-                    )
+            # Use snapshot_download for better reliability (handles partials and full repos)
+            self.progress_signal.emit(f"Verifying/Downloading: {repo_id}...", 30)
+            
+            # For faster-whisper and LLMs, we want specific weight formats if possible
+            # but snapshot handles directory mapping much better than hf_hub_download manually
+            snapshot_download(
+                repo_id=repo_id,
+                local_dir=local_dir,
+                token=token,
+                local_dir_use_symlinks=False, # Essential for Windows non-admin
+                # avoid redundant weight formats for whisper
+                ignore_patterns=["*.msgpack", "*.h5", "*.ot", "*.ckpt", "*.safetensors"] if "whisper" in repo_id else []
+            )
 
-            self.progress_signal.emit("All files downloaded!", 100)
+            self.progress_signal.emit("All files verified and ready!", 100)
             self.finished_signal.emit(repo_id, True)
             log.info("Model download complete: %s", repo_id)
 
@@ -56,7 +51,6 @@ class DownloadWorker(QObject):
             elif "CERTIFICATE_VERIFY_FAILED" in error_msg:
                 display_msg = "Error: SSL Verification Failed"
             else:
-                # Truncate long error messages for UI
                 display_msg = f"Error: {error_msg[:60]}..." if len(error_msg) > 60 else f"Error: {error_msg}"
 
             self.progress_signal.emit(display_msg, 0)
@@ -68,7 +62,6 @@ class DownloadWorker(QObject):
             filepath = os.path.join(local_dir, filename)
             self.progress_signal.emit(f"Connecting to {filename}...", 10)
             
-            # Use requests with certifi for better SSL support in frozen apps
             with requests.get(url, stream=True, verify=certifi.where()) as r:
                 r.raise_for_status()
                 total_length = r.headers.get('content-length')
@@ -83,7 +76,6 @@ class DownloadWorker(QObject):
                             if chunk:
                                 dl += len(chunk)
                                 f.write(chunk)
-                                # Progress between 10% and 90%
                                 done = int(80 * dl / total_length)
                                 self.progress_signal.emit(f"Downloading {filename}...", 10 + done)
             
@@ -120,28 +112,27 @@ class DownloadThread(QThread):
 class ModelManager:
     """Registry of downloadable AI models with local status checks."""
 
-    def __init__(self, base_path: str = "models"):
-        self.base_path = base_path
+    def __init__(self):
         self.models = {
             "whisper-base": {
                 "repo": "Systran/faster-whisper-base",
-                "files": ["model.bin", "config.json", "tokenizer.json", "vocabulary.txt"],
-                "path": os.path.join(base_path, "whisper/base"),
+                "files": ["model.bin", "config.json", "vocabulary.txt"],
+                "path": config.WHISPER_MODEL_PATH,
             },
             "llm-analysis": {
-                "repo": "Qwen/Qwen2.5-0.5B-Instruct",
-                "files": [],  # Handled natively by transformers snapshot/cache
-                "path": os.path.expanduser("~/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B-Instruct"),
+                "repo": config.LLM_MODEL_ID,
+                "files": [],  # snapshot check
+                "path": os.path.join(os.path.expanduser("~"), ".cache", "huggingface", "hub", f"models--{config.LLM_MODEL_ID.replace('/', '--')}"),
             },
             "blazeface": {
                 "url": "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
-                "files": ["blaze_face_full_range.tflite"], # Standardizing name
-                "path": os.path.join(base_path, "mediapipe"),
+                "files": ["blaze_face_full_range.tflite"],
+                "path": os.path.dirname(config.BLAZEFACE_MODEL_PATH),
             },
             "yunet-face": {
                 "url": "https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx",
                 "files": ["face_detection_yunet_2023mar.onnx"],
-                "path": os.path.join(base_path, "opencv"),
+                "path": os.path.dirname(config.YUNET_MODEL_PATH),
             },
         }
 
