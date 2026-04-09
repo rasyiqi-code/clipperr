@@ -48,10 +48,10 @@ artifacts:
   - path: clipperr-windows-v1.0.zip
     name: clipperr-windows-binary
 
-# Pengiriman menggunakan GitHub CLI (lebih stabil)
+# Pengiriman menggunakan GitHub CLI (jalur lengkap agar tidak error PATH)
 deploy_script:
   - ps: |
       if ($env:APPVEYOR_REPO_TAG -eq "true") {
         echo "Uploading release asset for tag $($env:APPVEYOR_REPO_TAG_NAME)..."
-        gh release upload $($env:APPVEYOR_REPO_TAG_NAME) clipperr-windows-v1.0.zip --clobber
+        & "C:\Program Files\GitHub CLI\gh.exe" release upload $($env:APPVEYOR_REPO_TAG_NAME) clipperr-windows-v1.0.zip --clobber
       }
