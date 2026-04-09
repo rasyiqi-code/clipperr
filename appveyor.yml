@@ -28,7 +28,7 @@ install:
   # 4. Install Dependencies
   - python -m pip install --upgrade pip
   - pip install -r requirements.txt
-  - pip install maturin pyinstaller pillow
+  - pip install pyinstaller
 
 build_script:
   # 1. Build Rust Core
