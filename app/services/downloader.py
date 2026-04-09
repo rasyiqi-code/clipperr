@@ -46,10 +46,20 @@ class DownloadWorker(QObject):
 
         except Exception as exc:
             error_msg = str(exc)
-            if "401" in error_msg or "403" in error_msg:
-                error_msg = "Auth Failed (Token Required)"
             log.error("Download failed for %s: %s", repo_id, error_msg)
-            self.progress_signal.emit(f"Error: {error_msg}", 0)
+            
+            # User-friendly mapping for common errors
+            if "401" in error_msg or "Unauthorized" in error_msg:
+                display_msg = "Error: Auth Failed (Check Token)"
+            elif "1314" in error_msg or "required privilege" in error_msg:
+                display_msg = "Error: Permission Denied (Disable Symlinks)"
+            elif "CERTIFICATE_VERIFY_FAILED" in error_msg:
+                display_msg = "Error: SSL Verification Failed"
+            else:
+                # Truncate long error messages for UI
+                display_msg = f"Error: {error_msg[:60]}..." if len(error_msg) > 60 else f"Error: {error_msg}"
+
+            self.progress_signal.emit(display_msg, 0)
             self.finished_signal.emit(repo_id, False)
 
     def download_url(self, url: str, filename: str, local_dir: str):

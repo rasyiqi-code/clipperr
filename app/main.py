@@ -8,9 +8,13 @@ import os
 import warnings
 import certifi
 
-# Fix SSL certificates for frozen apps - must be done BEFORE other imports that use networking
-os.environ['SSL_CERT_FILE'] = certifi.where()
-os.environ['HTTPS_CA_BUNDLE'] = certifi.where()
+# Global environment setup for distribution
+os.environ["SSL_CERT_FILE"] = certifi.where()
+os.environ["HTTPS_CA_BUNDLE"] = certifi.where()
+
+# IMPORTANT for Windows: Non-admin users cannot create symlinks, which HF uses by default.
+# Disabling them ensures downloads work for all users.
+os.environ["HF_HUB_DISABLE_SYMLINKS"] = "1"
 
 # Suppress all non-essential UserWarnings (like torchcodec/cuda/FFmpeg version mismatches)
 # so the terminal stays clean for the user.
