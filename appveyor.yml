@@ -44,22 +44,31 @@ build_script:
   - pyinstaller --noconfirm clipperr.spec
 
 after_build:
-  - ps: Compress-Archive -Path dist/clipperr/* -DestinationPath clipperr-windows-v1.0.zip
+  - ps: |
+      $zipName = "clipperr-windows-$($env:APPVEYOR_REPO_TAG_NAME).zip"
+      echo "Zipping as $zipName..."
+      Compress-Archive -Path dist/clipperr/* -DestinationPath $zipName
+      # Simpan nama zip ke environment agar bisa dipakai di tahap berikutnya
+      $env:FINAL_ZIP = $zipName
 
 artifacts:
-  - path: clipperr-windows-v1.0.zip
+  - path: clipperr-windows-*.zip
     name: clipperr-windows-binary
 
-# Pengiriman menggunakan GitHub CLI (jalur lengkap agar tidak error PATH)
+# Pengiriman menggunakan GitHub CLI (otomatis buat rilis & unggah)
 deploy_script:
   - ps: |
       if ($env:APPVEYOR_REPO_TAG -eq "true") {
         if (-not $env:GH_TOKEN) { 
-          Write-Error "GH_TOKEN tidak ditemukan di lingkungan AppVeyor!" 
+          Write-Error "GH_TOKEN tidak ditemukan!" 
           exit 1
         }
-        echo "Melakukan autentikasi GitHub CLI..."
+        echo "Melakukan autentikasi..."
         echo $env:GH_TOKEN | & "C:\Program Files\GitHub CLI\gh.exe" auth login --with-token
-        echo "Mengunggah aset rilis untuk tag $($env:APPVEYOR_REPO_TAG_NAME)..."
-        & "C:\Program Files\GitHub CLI\gh.exe" release upload $($env:APPVEYOR_REPO_TAG_NAME) clipperr-windows-v1.0.zip --clobber
+        
+        $tag = $env:APPVEYOR_REPO_TAG_NAME
+        $zip = "clipperr-windows-$($tag).zip"
+        
+        echo "Membuat rilis GitHub dan mengunggah $zip..."
+        & "C:\Program Files\GitHub CLI\gh.exe" release create $tag $zip --title "clipperr $tag" --notes "Rilis otomatis untuk versi $tag" --generate-notes
       }
