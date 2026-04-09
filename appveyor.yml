@@ -4,10 +4,6 @@ image: Visual Studio 2022
 # Hanya build jika ada TAG (seperti v1.0.0)
 skip_non_tags: true
 
-# Bisa juga skip manual dengan menambahkan [skip ci] di pesan commit
-skip_commits:
-  message: /\[skip ci\]/
-
 environment:
   PYTHON_DIR: "C:\\Python312-x64"
 
