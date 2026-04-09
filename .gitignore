@@ -32,3 +32,4 @@ core-engine/target/
 # OS
 .DS_Store
 Thumbs.db
+scratch/test_model/config.json
