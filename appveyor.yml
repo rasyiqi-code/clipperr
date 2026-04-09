@@ -45,4 +45,10 @@ artifacts:
   - path: clipperr-windows-v1.0.zip
     name: clipperr-windows-binary
 
-deploy: off
+# Konfigurasi Pengiriman Otomatis ke GitHub
+deploy:
+  provider: GitHub
+  auth_token: $(GITHUB_TOKEN) # Mengambil dari Environment Variable di UI AppVeyor
+  artifact: clipperr-windows-binary
+  on:
+    appveyor_repo_tag: true
