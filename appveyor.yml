@@ -6,6 +6,8 @@ skip_non_tags: true
 
 environment:
   PYTHON_DIR: "C:\\Python312-x64"
+  # Hubungkan variabel rahasia dari UI AppVeyor ke lingkungan build
+  GH_TOKEN: $(GH_TOKEN) 
 
 build: off
 
