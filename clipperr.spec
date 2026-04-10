@@ -13,6 +13,16 @@ for f in os.listdir(core_dir):
         core_binaries.append((os.path.join(core_dir, f), 'clipperr_core'))
 
 binaries = core_binaries
+# Add FFmpeg binaries for Windows portability
+for f in ["ffmpeg.exe", "ffprobe.exe"]:
+    if os.path.exists(f):
+        binaries.append((f, '.'))
+    elif os.name == 'nt':
+        # On Windows, we REALLY want these. If they are missing from root, 
+        # try common system paths during build as a fallback.
+        sys_ffmpeg = "C:\\Tools\\ffmpeg\\bin\\" + f
+        if os.path.exists(sys_ffmpeg):
+            binaries.append((sys_ffmpeg, '.'))
 
 # Datas: (source, destination_folder_in_bundle)
 datas = [

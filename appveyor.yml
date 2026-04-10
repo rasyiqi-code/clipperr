@@ -1,4 +1,4 @@
-version: 1.3.2.{build}
+version: 1.3.3.{build}
 image: Visual Studio 2022
 
 # Hanya build jika ada TAG (seperti v1.0.0)
@@ -32,6 +32,10 @@ install:
   - python -m pip install --upgrade pip
   - pip install -r requirements.txt
   - pip install pyinstaller
+  
+  # 5. Localize FFmpeg for PyInstaller (Binary Bundling)
+  - copy C:\Tools\ffmpeg\bin\ffmpeg.exe .
+  - copy C:\Tools\ffmpeg\bin\ffprobe.exe .
 
 build_script:
   # 1. Build Rust Core

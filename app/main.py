@@ -16,6 +16,14 @@ os.environ["HTTPS_CA_BUNDLE"] = certifi.where()
 # Disabling them ensures downloads work for all users.
 os.environ["HF_HUB_DISABLE_SYMLINKS"] = "1"
 
+# Path auto-discovery for FFmpeg/Bundled binaries
+if getattr(sys, 'frozen', False):
+    exe_dir = os.path.dirname(sys.executable)
+    if sys.platform == "win32":
+        # Add exe_dir to PATH so subprocess can find bundled ffmpeg.exe
+        os.environ["PATH"] = exe_dir + os.pathsep + os.environ.get("PATH", "")
+        print(f"Bundle detected. PATH updated with: {exe_dir}")
+
 # Suppress all non-essential UserWarnings (like torchcodec/cuda/FFmpeg version mismatches)
 # so the terminal stays clean for the user.
 warnings.filterwarnings("ignore", category=UserWarning)
