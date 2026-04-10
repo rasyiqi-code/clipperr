@@ -16,28 +16,42 @@ log = get_logger(__name__)
 class ProgressBridge:
     """Bridges tqdm progress from huggingface_hub to PySide6 signals.
     Implements full tqdm interface to avoid AttributeErrors."""
-    def __init__(self, filename, signal, file_idx=0, total_files=1):
+    def __init__(self, filename, signal, file_idx=0, total_files=1, weights=None):
         self.filename = filename
         self.signal = signal
         self.file_idx = file_idx
         self.total_files = total_files
+        self.weights = weights or {}
         self.total = 0
         self.current = 0
+        
+        # Calculate base progress from previous files
+        all_files = list(self.weights.keys()) if self.weights else []
+        self.base_progress = 0
+        if all_files and filename in all_files:
+            idx = all_files.index(filename)
+            sum_prev = sum(self.weights[f] for f in all_files[:idx])
+            total_sum = sum(self.weights.values())
+            self.base_progress = (sum_prev / total_sum) if total_sum > 0 else 0
+            self.file_weight = (self.weights[filename] / total_sum) if total_sum > 0 else (1.0 / total_files)
+        else:
+            self.base_progress = file_idx / total_files
+            self.file_weight = 1.0 / total_files
 
     def update(self, n=0):
         self.current += n
         if self.total > 0:
-            # Local file percentage
+            # Local file percentage (0.0 to 1.0)
             file_pct = (self.current / self.total)
             
-            # Overall progress: assume each file is 1/total_files of the work
-            # (In reality model.safetensors is 90% but this is a good enough approximation)
-            overall_pct = int(((self.file_idx + file_pct) / self.total_files) * 100)
+            # Weighted overall progress
+            overall_pct_float = (self.base_progress + (file_pct * self.file_weight)) * 100
+            overall_pct = int(overall_pct_float)
             
             # Clamp to 99% during download, 100% is reserved for final success
-            display_pct = max(5, min(99, overall_pct))
+            display_pct = max(1, min(99, overall_pct))
             
-            self.signal.emit(f"Downloading {self.filename}: {int(file_pct*100)}%", display_pct)
+            self.signal.emit(f"Downloading {self.filename}: {int(file_pct*100)}% ({display_pct}%)", display_pct)
 
     def set_description(self, desc, refresh=True): pass
     def close(self): pass
@@ -68,13 +82,17 @@ class DownloadWorker(QObject):
                     local_dir_use_symlinks=False,
                 )
             else:
+                # Define weights for progress reporting (model.safetensors is 988MB, others are small)
+                weights = {f: 1 for f in filenames}
+                if "model.safetensors" in weights:
+                    weights["model.safetensors"] = 1000 # 1000x heavier
+                if "model.bin" in weights:
+                    weights["model.bin"] = 1000
+
                 # Download files one by one for granular progress
                 for i, fname in enumerate(filenames):
-                    # Clean up stale partial files if any (locks are handled by hf_hub)
-                    # But if the whole dir is missing etc, os.makedirs already happened
-                    
-                    # Create a bridge for tqdm with multi-file context
-                    bridge = ProgressBridge(fname, self.progress_signal, i, len(filenames))
+                    # Create a bridge for tqdm with multi-file context and byte-weighting
+                    bridge = ProgressBridge(fname, self.progress_signal, i, len(filenames), weights)
                     
                     hf_hub_download(
                         repo_id=repo_id,
@@ -93,13 +111,8 @@ class DownloadWorker(QObject):
             error_msg = str(exc)
             log.error("Download failed for %s: %s", repo_id, error_msg)
             
-            # CRITICAL: Clean up partial files to avoid "Download Failed" stuck state on next attempt
-            if os.path.exists(local_dir):
-                log.warning("Cleaning up failed download directory: %s", local_dir)
-                try:
-                    shutil.rmtree(local_dir)
-                except Exception as cleanup_exc:
-                    log.error("Failed to cleanup directory: %s", cleanup_exc)
+            # DO NOT clean up directory anymore—we want to support resuming large files.
+            # hf_hub_download handles its own .incomplete files.
             
             if "401" in error_msg or "Unauthorized" in error_msg:
                 display_msg = "Error: Auth Required (Gated Model?)"
