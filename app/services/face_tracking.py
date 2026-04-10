@@ -196,38 +196,53 @@ class FaceTrackingService:
                 score = det[-1]
                 
                 # ── Filter 1: Aspect Ratio ──
+                # Faces should be roughly 1:1 or 1:1.5. 
+                # Relaxed for profiles (can be narrower).
                 aspect = det_h / det_w if det_w > 0 else 0
-                if aspect < 0.75 or aspect > 2.0:
+                if aspect < 0.6 or aspect > 2.5: # More tolerant for turning heads
                     continue
 
                 # ── Filter 2: Y-Position Gate ──
                 center_y = (y_min + det_h / 2) / h
                 if center_y > y_gate:
-                    log.debug("Rejecting blob at Y=%.2f (gate=%.2f) — below face zone", center_y, y_gate)
+                    # In desperation mode (y_gate=1.0), this will never trigger.
                     continue
                 
                 # ── Filter 3: Minimum Area ──
                 area_norm = (det_w * det_h) / (w * h)
                 if area_norm < min_area:
-                    log.debug("Rejecting blob (area=%.4f, min=%.4f) — too small", area_norm, min_area)
                     continue
 
                 center_x = (x_min + det_w / 2) / w
+                
+                # ── Extract Landmarks (YuNet: 5 points) ──
+                # YuNet format: [x,y,w,h, re_x,re_y, le_x,le_y, nt_x,nt_y, m_rx,m_ry, m_lx,m_ly, score]
+                # indices: 4,5=RE, 6,7=LE, 8,9=Nose, 10,11=M_Right, 12,13=M_Left
+                landmarks = {
+                    "nose": (det[8]/w, det[9]/h),
+                    "mouth_r": (det[10]/w, det[11]/h),
+                    "mouth_l": (det[12]/w, det[13]/h)
+                }
                 
                 # Check if MediaPipe confirms this detection
                 confirmed = False
                 for mp_det in mp_detections:
                     bbox = mp_det.bounding_box
-                    # Check overlap or proximity
                     mp_cx = (bbox.origin_x + bbox.width / 2) / w
                     mp_cy = (bbox.origin_y + bbox.height / 2) / h
                     dist = math.sqrt((center_x - mp_cx)**2 + (center_y - mp_cy)**2)
-                    if dist < 0.1:
+                    if dist < 0.12: # Slightly wider tolerance
                         confirmed = True
                         break
 
+                # Profile Recovery: If YuNet is confident but MediaPipe (frontal optimizer) is not,
+                # we accept it if the score is decent and it's not too low.
                 if not confirmed and score < unconfirmed_score_min:
-                    continue
+                    # Potential profile?
+                    if score > 0.40 and aspect > 1.2:
+                        pass # Accept as profile candidate
+                    else:
+                        continue
                 
                 results.append({
                     "center_x": center_x,
@@ -235,6 +250,7 @@ class FaceTrackingService:
                     "score": float(score),
                     "area": float(area_norm),
                     "confirmed": confirmed,
+                    "landmarks": landmarks,
                     "bbox": {
                         "origin_x": int(x_min),
                         "origin_y": int(y_min),
@@ -290,11 +306,25 @@ class FaceTrackingService:
         # ── Pass 2: Relaxed ──
         relaxed_faces = self._detect_faces_internal(
             frame,
-            y_gate=0.80,
-            min_area=0.001,
-            unconfirmed_score_min=0.60
+            y_gate=0.85,  # Relaxed Y gate
+            min_area=0.0005,
+            unconfirmed_score_min=0.55
         )
-        return relaxed_faces, self.classify_scene(relaxed_faces, w, h)
+        if relaxed_faces:
+            return relaxed_faces, self.classify_scene(relaxed_faces, w, h)
+        
+        # ── Pass 3: Extreme (Desperation Mode) ──
+        # No Y-gate, no min-area. Just find *anything* human-like in the frame.
+        extreme_faces = self._detect_faces_internal(
+            frame,
+            y_gate=1.0,
+            min_area=0.0,
+            unconfirmed_score_min=0.45
+        )
+        if extreme_faces:
+            log.debug("[EXTREME] Desperation pass found potential subject")
+            
+        return extreme_faces, self.classify_scene(extreme_faces, w, h)
 
     def track_face(self, frame) -> tuple[float, float]:
         """Backward compatible wrapper."""

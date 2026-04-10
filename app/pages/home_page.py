@@ -65,13 +65,39 @@ class HomePage(QScrollArea):
         self.progress_bar.setTextVisible(False)  # Hide overlapping text
         self.layout.addWidget(self.progress_bar)
 
-        # ── Analytics Bar ──
-        self._build_analytics_section()
+        # ── Dynamic content starts after this point ──
+        # Track where dynamic widgets begin so we can refresh them
+        self._dynamic_start_index = self.layout.count()
 
-        # ── Recent Projects Gallery ──
+        self._build_analytics_section()
         self._build_gallery_section()
 
         self.layout.addStretch()
+
+    def _refresh_dashboard(self):
+        """Rebuild analytics and gallery sections with fresh data."""
+        # Remove all widgets/layouts after the dynamic start index
+        while self.layout.count() > self._dynamic_start_index:
+            item = self.layout.takeAt(self._dynamic_start_index)
+            if item.widget():
+                item.widget().deleteLater()
+            elif item.layout():
+                # Recursively delete child widgets in sub-layouts
+                self._clear_layout(item.layout())
+
+        self._build_analytics_section()
+        self._build_gallery_section()
+        self.layout.addStretch()
+
+    @staticmethod
+    def _clear_layout(layout):
+        """Recursively remove all items from a layout."""
+        while layout.count():
+            item = layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+            elif item.layout():
+                HomePage._clear_layout(item.layout())
 
     def _build_analytics_section(self):
         title = QLabel("System Analytics")
@@ -224,8 +250,5 @@ class HomePage(QScrollArea):
         self.drop_zone.setEnabled(not active)
         if not active:
             # Refresh gallery when processing finishes
-            self.history_manager.load() 
-            # Note: We need to recreate the page layout fully to reflect new projects,
-            # but simplest way is to rely on app restart for full gallery refresh,
-            # or recreate _build_analytics_section logic dynamically.
-            pass
+            self.history_manager.clips = self.history_manager.load()
+            self._refresh_dashboard()

@@ -20,7 +20,7 @@ class HistoryManager:
             with open(self.history_file, 'r') as f:
                 return json.load(f)
         except Exception as e:
-            log.error(f"Failed to load history: {e}")
+            log.error("Failed to load history: %s", e)
             return []
 
     def save(self):
@@ -29,7 +29,7 @@ class HistoryManager:
             with open(self.history_file, 'w') as f:
                 json.dump(self.clips, f, indent=4)
         except Exception as e:
-            log.error(f"Failed to save history: {e}")
+            log.error("Failed to save history: %s", e)
 
     MAX_HISTORY = 100  # Prevent unbounded growth
 
@@ -48,9 +48,9 @@ class HistoryManager:
         self.clips = [c for c in self.clips if c.get('output_path') != output_path]
         if len(self.clips) < original_count:
             self.save()
-            log.info(f"Removed clip from history: {output_path}")
+            log.info("Removed clip from history: %s", output_path)
         else:
-            log.warning(f"Clip not found in history: {output_path}")
+            log.warning("Clip not found in history: %s", output_path)
 
     def clear(self):
         """Clear all history."""

@@ -4,10 +4,6 @@ All hardcoded values live here so they can be changed in one place.
 """
 
 import os
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
 
 
 
@@ -28,7 +24,7 @@ HISTORY_FILE = os.path.join(BASE_DIR, "history.json")
 
 WHISPER_MODEL_PATH = os.path.join(MODELS_DIR, "whisper", "base")
 LLM_MODEL_ID = "Qwen/Qwen2.5-0.5B-Instruct"
-BLAZEFACE_MODEL_PATH = os.path.join(MODELS_DIR, "mediapipe", "blaze_face_full_range.tflite")
+BLAZEFACE_MODEL_PATH = os.path.join(MODELS_DIR, "mediapipe", "blaze_face_short_range.tflite")
 YUNET_MODEL_PATH = os.path.join(MODELS_DIR, "opencv", "face_detection_yunet_2023mar.onnx")
 
 # ── Face Tracking ────────────────────────────────────
@@ -111,18 +107,21 @@ class UserSettings:
                 pass
 
     def save(self):
-        with open(USER_SETTINGS_FILE, "w") as f:
-            json.dump({
-                "watermark_path": self.watermark_path,
-                "auto_thumbnail": self.auto_thumbnail,
-                "watermark_type": self.watermark_type,
-                "watermark_text": self.watermark_text,
-                "watermark_pos": self.watermark_pos,
-                "watermark_opacity": self.watermark_opacity,
-                "llm_provider": self.llm_provider,
-                "openrouter_key": self.openrouter_key,
-                "openrouter_model": self.openrouter_model,
-            }, f)
+        try:
+            with open(USER_SETTINGS_FILE, "w") as f:
+                json.dump({
+                    "watermark_path": self.watermark_path,
+                    "auto_thumbnail": self.auto_thumbnail,
+                    "watermark_type": self.watermark_type,
+                    "watermark_text": self.watermark_text,
+                    "watermark_pos": self.watermark_pos,
+                    "watermark_opacity": self.watermark_opacity,
+                    "llm_provider": self.llm_provider,
+                    "openrouter_key": self.openrouter_key,
+                    "openrouter_model": self.openrouter_model,
+                }, f)
+        except Exception:
+            pass  # Fail silently — settings are non-critical
 
 # Global singleton
 prefs = UserSettings()

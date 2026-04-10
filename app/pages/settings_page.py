@@ -481,9 +481,10 @@ class SettingsPage(QScrollArea):
         self._refresh_model_ui(model_id)
         if not success:
             status_label, _btn = self._model_ui[model_id]
-            # If the status label already has a specific error message from the worker, don't overwrite it
-            if not status_label.text().startswith("📥 [0%] Error:"):
-                status_label.setText("❌ Error")
+            # Don't overwrite if it already contains a specific error message
+            current_text = status_label.text()
+            if "Error:" not in current_text:
+                status_label.setText("❌ Download Failed")
             status_label.setStyleSheet("color: #ef4444; font-weight: bold;")
 
     # ── Public helpers ───────────────────────────────

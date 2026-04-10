@@ -17,7 +17,7 @@ fn extract_metadata(path: String) -> PyResult<String> {
             &path,
         ])
         .output()
-        .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("Failed to run ffprobe: {}", e)))?;
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("Failed to run ffmpeg: {}", e)))?;
 
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
@@ -66,9 +66,10 @@ fn build_dynamic_crop(keyframes: &[PanKeyframe]) -> String {
 
     let x_expr = build_lerp_expression(&kfs);
 
-    // RS-2 fix: Wrap in clip(0, iw-crop_w, expr) for boundary safety
+    // RS-2 fix: Wrap in clip(val, min, max) for boundary safety
+    // FFmpeg clip() signature: clip(value, min, max)
     format!(
-        "crop=ih*9/16:ih:clip(0\\,iw-ih*9/16\\,{}):0",
+        "crop=ih*9/16:ih:clip({}\\,0\\,iw-ih*9/16):0,scale=1080:1920",
         x_expr
     )
 }
@@ -80,10 +81,12 @@ fn build_dynamic_crop(keyframes: &[PanKeyframe]) -> String {
 /// The expression converts normalized x (0.0-1.0) to pixel position:
 ///   pixel_x = iw * x_norm - crop_width / 2
 ///   where crop_width = ih * 9 / 16
+///
+/// Returns ONLY the x-position expression (not the full crop filter).
 fn build_lerp_expression(keyframes: &[PanKeyframe]) -> String {
     let n = keyframes.len();
     if n == 0 {
-        return "crop=ih*9/16:ih:iw*0.5-ih*9/16/2:0,scale=1080:1920".to_string();
+        return "iw*0.5-ih*9/16/2".to_string();
     }
 
     // Base case: the final x value
@@ -128,7 +131,7 @@ fn build_lerp_expression(keyframes: &[PanKeyframe]) -> String {
         }
     }
 
-    format!("crop=ih*9/16:ih:{}:0,scale=1080:1920", x_expr)
+    x_expr
 }
 
 #[pyfunction]
@@ -190,24 +193,27 @@ fn render_clip(
                 path, opacity, crop_filter, pos_x, pos_y
             ));
         } else if wm_type == "text" {
-            // Text watermark uses drawtext instead of complex layout chaining
+            // Text watermark uses drawtext.
+            // In drawtext: w/h = video size, tw/th = text size.
             let text = config["text"].as_str().unwrap_or("")
                 .replace("\\", "\\\\")
                 .replace(":", "\\:")
                 .replace("'", "\\'");
+            
+            let (x_expr, y_expr) = match pos {
+                "top_left" => ("20", "20"),
+                "top_right" => ("w-tw-20", "20"),
+                "bottom_left" => ("20", "h-th-20"),
+                "bottom_right" => ("w-tw-20", "h-th-20"),
+                "center" => ("(w-tw)/2", "(h-th)/2"),
+                _ => ("20", "20")
+            };
+
             let drawtext = format!(
-                "drawtext=text='{}':fontcolor=white@{:.2}:fontsize=40:fontfile='DejaVuSans-Bold.ttf':x={}:y={}",
-                text, 
-                opacity, 
-                pos_x.replace("W", "TEMP_W").replace("w", "tw").replace("TEMP_W", "w"), 
-                pos_y.replace("H", "TEMP_H").replace("h", "th").replace("TEMP_H", "h")
+                "drawtext=text='{}':fontcolor=white@{:2}:fontsize=40:fontfile='DejaVuSans-Bold.ttf':x={}:y={}",
+                text, opacity, x_expr, y_expr
             );
-            // x/y vars in drawtext are w/h (video width/height) and tw/th (text width/height)
-            let drawtext_fixed = drawtext
-                .replace("tw-tW", "w-tw") // Correct upper/lower W variables back (hacky cleanup of overlay variables)
-                .replace("th-tH", "h-th");
-            // Since drawtext doesn't merge inputs, it just chains directly after crop
-            filter_chain.push_str(&format!("{},{}[wm_out]", crop_filter, drawtext_fixed));
+            filter_chain.push_str(&format!("{},{}[wm_out]", crop_filter, drawtext));
         } else {
             filter_chain.push_str(&format!("{}[wm_out]", crop_filter));
         }

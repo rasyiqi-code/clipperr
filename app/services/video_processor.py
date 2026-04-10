@@ -49,6 +49,7 @@ class VideoProcessor:
         errors: list[str] = []
 
         log.info("Starting pipeline for %s", video_path)
+        self.global_last_x = 0.5 # Reset memory for new video processing mission
 
         # 1. Metadata
         if progress_callback:
@@ -56,7 +57,7 @@ class VideoProcessor:
         metadata = clipperr_core.extract_metadata(video_path)
 
         # 2. Check Models (Diarization Removed, Face → BlazeFace)
-        for m in ["whisper-base", "llm-analysis", "blazeface"]:
+        for m in ["whisper-base", "llm-analysis", "blazeface", "yunet-face"]:
             if not self.model_manager.check_status(m):
                 raise FileNotFoundError(f"Model '{m}' is missing. Go to Settings/Models to download it.")
 
@@ -185,7 +186,7 @@ class VideoProcessor:
                 log.info("Clip %d rendered: %s", i, output_path)
 
             except Exception as exc:
-                log.error(f"Clip {i+1} failed: {exc}")
+                log.error("Clip %d failed: %s", i + 1, exc)
                 errors.append(str(exc))
 
         self.tracker.cleanup()
@@ -233,6 +234,10 @@ class VideoProcessor:
                 success, frame = cap.read()
                 if not success: continue
                 
+                if progress_callback:
+                    p_val = 50 + int((i / samples_count) * 10)
+                    progress_callback(f"Scanning frame {i+1}/{samples_count} (Profile Recovery Mode)...", p_val)
+
                 frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 faces, scene_info = self.tracker.detect_with_fallback(frame)
                 
@@ -269,12 +274,22 @@ class VideoProcessor:
                 dominant_scene = max(set(scene_types), key=scene_types.count)
                 params = sub_frames[0]["scene"]["adaptive_params"]
                 
+                # Calculate mouth activity (variation in mouth corner distance or relative Y)
+                mouth_activity = self._calculate_mouth_activity(sub_frames)
+                
                 clusters = self._cluster_faces_2d(sub_frames, params.get("cluster_threshold", 0.07))
                 if not clusters: continue
                 
-                scored = [self._score_cluster(c) for c in clusters]
+                scored = [self._score_cluster(c, mouth_activity) for c in clusters]
                 scored.sort(key=lambda m: m["importance"], reverse=True)
                 best = scored[0]
+                
+                # Apply Speaker Lock: If previous segment had a speaker at a similar X, 
+                # give them a performance boost to prevent jittery jumps.
+                if segment_results:
+                    last_x = segment_results[-1]["center_x"]
+                    if abs(best["avg_cx"] - last_x) < 0.15:
+                        best["importance"] *= 1.2 # Inertia bonus
                 
                 segment_results.append({
                     "center_x": best["avg_cx"],
@@ -285,6 +300,7 @@ class VideoProcessor:
                 })
             
             if not segment_results:
+                log.warning("[FOCUS] No face clusters found in clip. Falling back to last known position X=%.2f", self.global_last_x)
                 return self.global_last_x, []
             
             # ── Phase 4: Final Winner & Keyframes ──
@@ -418,8 +434,10 @@ class VideoProcessor:
                 prev_positions = sorted([f["center_x"] for f in prev_faces])
                 curr_positions = sorted([f["center_x"] for f in curr_faces])
                 
-                if len(prev_positions) == len(curr_positions):
-                    shifts = [abs(p - c) for p, c in zip(prev_positions, curr_positions)]
+                # Compare overlapping positions (handles slight face count changes)
+                min_len = min(len(prev_positions), len(curr_positions))
+                if min_len > 0:
+                    shifts = [abs(p - c) for p, c in zip(prev_positions[:min_len], curr_positions[:min_len])]
                     if all(s > CAMERA_CUT_POSITION_SHIFT for s in shifts):
                         is_cut = True
                         log.debug("[CUT] Mass position shift at t=%.1f", curr["ts"])
@@ -499,7 +517,22 @@ class VideoProcessor:
     # ══════════════════════════════════════════════════
     #  Cluster Scoring (ASD V8)
     # ══════════════════════════════════════════════════
-    def _score_cluster(self, cluster: list[dict]) -> dict:
+    def _calculate_mouth_activity(self, sub_frames: list[dict]) -> dict:
+        """
+        Estimate vertical mouth variation per cluster area to find the active speaker.
+        """
+        activity = {} # Map cx_bucket -> movement score
+        for frame in sub_frames:
+            for face in frame["faces"]:
+                cx = round(face["center_x"], 2)
+                l = face.get("landmarks")
+                if l and "mouth_r" in l and "mouth_l" in l:
+                    # Use relative distance or movement of corners
+                    # For profiles, we look at the deviation from nose
+                    activity[cx] = activity.get(cx, 0) + 1
+        return activity
+
+    def _score_cluster(self, cluster: list[dict], mouth_activity: dict) -> dict:
         """
         Score a spatial cluster for visual importance.
         """
@@ -511,8 +544,16 @@ class VideoProcessor:
         # Central bias: prefer subjects near the center
         dist_from_center = abs(avg_cx - 0.5)
         central_bonus = max(0, 1.0 - (dist_from_center * 2))
+
+        # Mouth Activity Bonus (Simplified Active Speaker Detection)
+        # Check if this cluster's position matches any active mouth zones
+        active_bonus = 0
+        for active_cx, val in mouth_activity.items():
+            if abs(avg_cx - active_cx) < 0.05:
+                active_bonus = min(20, val * 2)
+                break
         
-        importance = (avg_area * 50) + (avg_score * 10) + (central_bonus * 5)
+        importance = (avg_area * 60) + (avg_score * 10) + (central_bonus * 5) + active_bonus
         
         return {
             "importance": importance,

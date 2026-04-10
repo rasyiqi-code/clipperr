@@ -41,8 +41,13 @@ class AnalysisService:
                 model=self.model_id,
                 device=device,
                 torch_dtype=torch_dtype,
-                model_kwargs={"low_cpu_mem_usage": True}
+                model_kwargs={"low_cpu_mem_usage": True},
+                local_files_only=True  # Force offline mode at pipeline level
             )
+            # Force remove default max_length to stop the warning about conflicting with max_new_tokens
+            if hasattr(self.llm, "model") and hasattr(self.llm.model, "generation_config"):
+                self.llm.model.generation_config.max_length = None
+                
             self.available = True
             log.info("LLM pipeline loaded successfully on %s", device)
         except Exception as exc:
@@ -80,11 +85,13 @@ class AnalysisService:
             if self.llm and self.available:
                 return self._llm_analyze(transcript_segments)
             
-            raise Exception("AI provider failed to initialize.")
+            # Graceful degradation: use heuristic instead of crashing
+            log.warning("LLM unavailable — falling back to heuristic analysis")
+            return self._heuristic_analyze(transcript_segments)
         finally:
             self.unload_model()
 
-    def _chunked_analyze(self, transcript_segments: list[dict], progress_callback=None) -> list[dict]:
+    def _chunked_analyze(self, transcript_segments: list[dict], progress_callback=None) -> tuple[list[dict], list[str]]:
         """Coordinate multi-pass chunked analysis."""
         chunks = self._split_into_chunks(transcript_segments)
         log.info("Processing long video in %d chunks...", len(chunks))
@@ -102,7 +109,11 @@ class AnalysisService:
                     chunk_clips = self._api_analyze(chunk_segments)
                 else:
                     if not self.available: self.load_model()
-                    chunk_clips = self._llm_analyze(chunk_segments)
+                    if self.llm and self.available:
+                        chunk_clips = self._llm_analyze(chunk_segments)
+                    else:
+                        # Heuristic fallback per-chunk
+                        chunk_clips = self._heuristic_analyze(chunk_segments)
                 
                 all_clips.extend(chunk_clips)
                 
@@ -143,9 +154,6 @@ class AnalysisService:
             
             # Slide window forward by duration minus overlap
             start_ts += (ANALYSIS_CHUNK_DURATION - ANALYSIS_CHUNK_OVERLAP)
-            
-            # Break if we're basically at the end
-            if start_ts >= duration - 10: break
             
         return chunks
 
@@ -219,18 +227,32 @@ class AnalysisService:
             if not self.llm:
                 raise Exception("LLM model is not loaded.")
 
+            import torch
+            # Optimization: Use all available CPU threads for torch if on CPU
+            if not torch.cuda.is_available():
+                import multiprocessing
+                torch.set_num_threads(multiprocessing.cpu_count())
+
+            # Specific call to avoid transformers warning about conflicting max_length vs max_new_tokens
+            # We don't pass max_length at all here because we already set it to None in the model config
             outputs = self.llm(
                 messages,
                 max_new_tokens=LLM_MAX_TOKENS,
                 do_sample=True,
                 temperature=LLM_TEMPERATURE,
                 top_k=LLM_TOP_K,
-                # Avoid passing return_full_text/max_length to keep config clean
                 pad_token_id=self.llm.tokenizer.eos_token_id if hasattr(self.llm, 'tokenizer') else None,
             )
             
-            # The pipeline returns a list; for chat mode, access the last assistant message
-            response = outputs[0]["generated_text"][-1]["content"]
+            # Robust extraction: handle both Chat and TextGen pipeline formats
+            raw_output = outputs[0]["generated_text"]
+            if isinstance(raw_output, list) and len(raw_output) > 0:
+                # Chat format: last message content
+                response = raw_output[-1].get("content", "")
+            else:
+                # Raw text format: just the string
+                response = str(raw_output)
+            
             json_str = response.strip()
 
             log.debug("Raw LLM response: %s", json_str)

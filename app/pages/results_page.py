@@ -70,7 +70,9 @@ class ResultsPage(QWidget):
 
         if clips:
             self.history_manager.add_clips(clips)
-            self.refresh_history()
+        
+        # Always refresh to rebuild the list cleanly (removes stale error labels too)
+        self.refresh_history()
         
         if errors:
             self._info.setText(f"Found {len(clips)} clips. Some errors occurred:")
@@ -78,7 +80,8 @@ class ResultsPage(QWidget):
                 err_label = QLabel(f"⚠️ {err}")
                 err_label.setWordWrap(True)
                 err_label.setStyleSheet("color: #f59e0b; font-size: 12px;")
-                self._list_layout.addWidget(err_label)
+                # Insert before the trailing stretch
+                self._list_layout.insertWidget(self._list_layout.count() - 1, err_label)
         elif not clips and not self.history_manager.clips:
             self._info.setText("No clips found. Try a different video.")
 
@@ -98,11 +101,13 @@ class ResultsPage(QWidget):
 
     # ── Internal helpers ─────────────────────────────
     def _clear_cards(self):
-        """Remove all cards, keeping only the header and info label."""
+        """Remove all items after header and info label (index 0 and 1)."""
         while self._list_layout.count() > 2:
             item = self._list_layout.takeAt(2)
-            if item.widget():
-                item.widget().deleteLater()
+            w = item.widget()
+            if w:
+                w.deleteLater()
+            # Also handles spacers and sub-layouts that accumulate
 
     def _add_clip_card(self, clip: dict):
         card = QFrame()
@@ -149,7 +154,7 @@ class ResultsPage(QWidget):
                 cp_btn.setFixedSize(45, 20)
                 cp_btn.setCursor(Qt.PointingHandCursor)
                 cp_btn.setStyleSheet("font-size: 9px; font-weight: 800; background-color: #1e293b; color: #f8fafc; border-radius: 4px;")
-                cp_btn.clicked.connect(lambda: QApplication.clipboard().setText(copy_text))
+                cp_btn.clicked.connect(lambda _=None, t=copy_text: QApplication.clipboard().setText(t))
                 h_layout.addWidget(cp_btn)
                 f_layout.addLayout(h_layout)
 

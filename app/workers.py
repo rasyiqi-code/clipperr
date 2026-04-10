@@ -3,6 +3,7 @@ Background workers for heavy processing tasks.
 Runs in QThread to keep the UI responsive.
 """
 
+import threading
 from PySide6.QtCore import QThread, Signal
 
 from services.video_processor import VideoProcessor
@@ -12,15 +13,17 @@ log = get_logger(__name__)
 
 # UI-1 fix: Shared VideoProcessor instance to avoid reloading models (10-30s) per run
 _shared_processor: VideoProcessor | None = None
+_processor_lock = threading.Lock()
 
 
 def _get_processor() -> VideoProcessor:
-    """Get or create the shared VideoProcessor (models loaded once)."""
+    """Get or create the shared VideoProcessor (models loaded once). Thread-safe."""
     global _shared_processor
-    if _shared_processor is None:
-        log.info("Creating shared VideoProcessor (first run — models will load)")
-        _shared_processor = VideoProcessor()
-    return _shared_processor
+    with _processor_lock:
+        if _shared_processor is None:
+            log.info("Creating shared VideoProcessor (first run — models will load)")
+            _shared_processor = VideoProcessor()
+        return _shared_processor
 
 
 class ProcessingThread(QThread):

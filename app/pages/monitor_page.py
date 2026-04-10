@@ -1,6 +1,5 @@
 import os
 import psutil
-import torch
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
     QFrame, QProgressBar, QScrollArea
@@ -75,7 +74,7 @@ class MonitorPage(QScrollArea):
         # Initial update
         self._update_stats()
 
-    def _create_monitor_card(self, title_text, type):
+    def _create_monitor_card(self, title_text, card_type):
         card = QFrame()
         card.setObjectName("ClipCard") # Standardize to ClipCard
         card.setMinimumHeight(180)
@@ -138,20 +137,26 @@ class MonitorPage(QScrollArea):
             self.ram_card.pbar.setValue(int(mem.percent))
             self.ram_card.sub_val.setText(f"{mem_used_gb:.1f} GB / {mem_total_gb:.1f} GB")
 
-            # 3. GPU
-            if torch.cuda.is_available():
-                gpu_name = torch.cuda.get_device_name(0)
-                vram_total = torch.cuda.get_device_properties(0).total_memory / (1024**3)
-                vram_used = torch.cuda.memory_allocated(0) / (1024**3)
-                vram_pct = (vram_used / vram_total) * 100 if vram_total > 0 else 0
-                
-                self.gpu_card.val_label.setText(f"{vram_pct:.1f}%")
-                self.gpu_card.pbar.setValue(int(vram_pct))
-                self.gpu_card.sub_val.setText(f"{vram_used:.2f} / {vram_total:.1f} GB ({gpu_name[:15]}...)")
-            else:
+            # 3. GPU (lazy import — torch may not be installed yet)
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    gpu_name = torch.cuda.get_device_name(0)
+                    vram_total = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+                    vram_used = torch.cuda.memory_allocated(0) / (1024**3)
+                    vram_pct = (vram_used / vram_total) * 100 if vram_total > 0 else 0
+                    
+                    self.gpu_card.val_label.setText(f"{vram_pct:.1f}%")
+                    self.gpu_card.pbar.setValue(int(vram_pct))
+                    self.gpu_card.sub_val.setText(f"{vram_used:.2f} / {vram_total:.1f} GB ({gpu_name[:15]}...)")
+                else:
+                    self.gpu_card.val_label.setText("N/A")
+                    self.gpu_card.pbar.setValue(0)
+                    self.gpu_card.sub_val.setText("No CUDA Device Found")
+            except ImportError:
                 self.gpu_card.val_label.setText("N/A")
                 self.gpu_card.pbar.setValue(0)
-                self.gpu_card.sub_val.setText("No CUDA Device Found")
+                self.gpu_card.sub_val.setText("PyTorch not installed")
 
             # ── Process Details ─────────────────────────────
             proc = psutil.Process(os.getpid())

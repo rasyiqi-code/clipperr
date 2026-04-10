@@ -13,6 +13,30 @@ from logger import get_logger
 log = get_logger(__name__)
 
 
+class ProgressBridge:
+    """Bridges tqdm progress from huggingface_hub to PySide6 signals.
+    Implements full tqdm interface to avoid AttributeErrors."""
+    def __init__(self, filename, signal, *args, **kwargs):
+        self.filename = filename
+        self.signal = signal
+        self.total = 0
+        self.current = 0
+
+    def update(self, n=0):
+        self.current += n
+        if self.total > 0:
+            pct = int((self.current / self.total) * 100)
+            scaled_pct = 5 + int(pct * 0.9)
+            self.signal.emit(f"Downloading {self.filename}: {pct}%", scaled_pct)
+
+    def set_description(self, desc, refresh=True): pass
+    def close(self): pass
+    def clear(self, *args, **kwargs): pass
+    def refresh(self, *args, **kwargs): pass
+    def __enter__(self): return self
+    def __exit__(self, exc_type, exc_val, exc_tb): pass
+
+
 class DownloadWorker(QObject):
     """Performs file downloads (HuggingFace or direct URL)."""
 
@@ -22,20 +46,35 @@ class DownloadWorker(QObject):
     def download_model(self, repo_id: str, filenames: list[str], local_dir: str, token: str | None = None):
         try:
             os.makedirs(local_dir, exist_ok=True)
+            log.info("Starting granular download for %s into %s", repo_id, local_dir)
             
-            # Use snapshot_download for better reliability (handles partials and full repos)
-            self.progress_signal.emit(f"Verifying/Downloading: {repo_id}...", 30)
-            
-            # Strictly anonymous for now as per user request
-            snapshot_download(
-                repo_id=repo_id,
-                local_dir=local_dir,
-                token=None, # Forcing None to ensure it works anonymously
-                local_dir_use_symlinks=False, 
-                ignore_patterns=["*.msgpack", "*.h5", "*.ot", "*.ckpt", "*.safetensors"] if "whisper" in repo_id else []
-            )
+            # If no files specified, use snapshot_download (likely a complex repo like Qwen)
+            if not filenames:
+                self.progress_signal.emit(f"Verifying {repo_id} (Snapshot)...", 30)
+                snapshot_download(
+                    repo_id=repo_id,
+                    local_dir=local_dir,
+                    token=None,
+                    local_dir_use_symlinks=False,
+                )
+            else:
+                # Download files one by one for granular progress
+                for i, fname in enumerate(filenames):
+                    self.progress_signal.emit(f"Fetching {fname}...", 5 + int((i / len(filenames)) * 90))
+                    
+                    # Create a bridge for tqdm
+                    bridge = ProgressBridge(fname, self.progress_signal)
+                    
+                    hf_hub_download(
+                        repo_id=repo_id,
+                        filename=fname,
+                        local_dir=local_dir,
+                        token=None,
+                        local_dir_use_symlinks=False,
+                        tqdm_class=lambda **kwargs: bridge # Inject our bridge as the tqdm class
+                    )
 
-            self.progress_signal.emit("All files verified and ready!", 100)
+            self.progress_signal.emit("Setup complete!", 100)
             self.finished_signal.emit(repo_id, True)
             log.info("Model download complete: %s", repo_id)
 
@@ -108,10 +147,10 @@ class DownloadThread(QThread):
         self.token = token
 
     def run(self):
-        worker = DownloadWorker()
-        worker.progress_signal.connect(self.progress_signal.emit)
-        worker.finished_signal.connect(self.finished_signal.emit)
-        worker.download_model(self.repo_id, self.filenames, self.local_dir, self.token)
+        self._worker = DownloadWorker()
+        self._worker.progress_signal.connect(self.progress_signal.emit)
+        self._worker.finished_signal.connect(self.finished_signal.emit)
+        self._worker.download_model(self.repo_id, self.filenames, self.local_dir, self.token)
 
 
 class ModelManager:
@@ -121,13 +160,13 @@ class ModelManager:
         self.models = {
             "whisper-base": {
                 "repo": "Systran/faster-whisper-base",
-                "files": ["model.bin", "config.json", "vocabulary.txt"],
+                "files": ["model.bin", "config.json", "vocabulary.txt", "tokenizer.json"],
                 "path": config.WHISPER_MODEL_PATH,
             },
             "llm-analysis": {
                 "repo": config.LLM_MODEL_ID,
-                "files": [],  # snapshot check
-                "path": os.path.join(os.path.expanduser("~"), ".cache", "huggingface", "hub", f"models--{config.LLM_MODEL_ID.replace('/', '--')}"),
+                "files": ["config.json", "model.safetensors"], # Explicit check for Qwen
+                "path": os.path.join(os.path.expanduser("~"), ".cache", "huggingface", "hub", f"models--{config.LLM_MODEL_ID.replace('/', '--')}", "snapshots"),
             },
             "blazeface": {
                 "url": "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
@@ -148,11 +187,22 @@ class ModelManager:
         model_info = self.models[model_id]
         target_dir = model_info["path"]
         
-        if not os.path.exists(target_dir):
+        # Special handling for snapshot-based paths (Qwen)
+        if "snapshots" in target_dir:
+            if not os.path.exists(target_dir):
+                return False
+            # Check if any snapshot subdirectory exists and contains required files
+            try:
+                for snapshot_id in os.listdir(target_dir):
+                    snap_path = os.path.join(target_dir, snapshot_id)
+                    if all(os.path.exists(os.path.join(snap_path, f)) for f in model_info["files"]):
+                        return True
+            except Exception:
+                pass
             return False
             
-        if not model_info.get("files"):
-            return True  # Directory check is sufficient for transformers cache
+        if not os.path.exists(target_dir):
+            return False
             
         return all(
             os.path.exists(os.path.join(target_dir, f))

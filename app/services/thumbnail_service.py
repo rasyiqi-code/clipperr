@@ -50,8 +50,10 @@ class ThumbnailService:
         try:
             # Reconstruct the ffmpeg crop logic used in lib.rs
             # crop=1080:1920:iw*0.5-ih*9/16/2:0
-            crop_x = f"iw*{center_x_norm}-ih*9/16/2"
-            crop_filter = f"crop=ih*9/16:ih:{crop_x}:0,scale=1080:1920"
+            # Clamp center_x_norm to safe range (matches lib.rs build_static_crop)
+            cx = max(0.05, min(0.95, center_x_norm))
+            # RS-2 fix: Boundary clamp with max(0, min(iw-crop_w, expr))
+            crop_filter = f"crop=ih*9/16:ih:max(0\\,min(iw-ih*9/16\\,iw*{cx}-ih*9/16/2)):0,scale=1080:1920"
 
             cmd = [
                 "ffmpeg", "-y",

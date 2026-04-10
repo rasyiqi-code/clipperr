@@ -30,12 +30,12 @@ class TestConfig(unittest.TestCase):
     def test_settings_persistence_logic(self):
         """Verify that data can be saved and loaded accurately."""
         settings = UserSettings()
-        settings.hf_token = "test_token_123"
+        settings.openrouter_key = "sk-test-123"
         settings.save()
         
         # Load into a new instance
         new_settings = UserSettings()
-        self.assertEqual(new_settings.hf_token, "test_token_123")
+        self.assertEqual(new_settings.openrouter_key, "sk-test-123")
 
     def tearDown(self):
         import config
