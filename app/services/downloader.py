@@ -16,18 +16,28 @@ log = get_logger(__name__)
 class ProgressBridge:
     """Bridges tqdm progress from huggingface_hub to PySide6 signals.
     Implements full tqdm interface to avoid AttributeErrors."""
-    def __init__(self, filename, signal, *args, **kwargs):
+    def __init__(self, filename, signal, file_idx=0, total_files=1):
         self.filename = filename
         self.signal = signal
+        self.file_idx = file_idx
+        self.total_files = total_files
         self.total = 0
         self.current = 0
 
     def update(self, n=0):
         self.current += n
         if self.total > 0:
-            pct = int((self.current / self.total) * 100)
-            scaled_pct = 5 + int(pct * 0.9)
-            self.signal.emit(f"Downloading {self.filename}: {pct}%", scaled_pct)
+            # Local file percentage
+            file_pct = (self.current / self.total)
+            
+            # Overall progress: assume each file is 1/total_files of the work
+            # (In reality model.safetensors is 90% but this is a good enough approximation)
+            overall_pct = int(((self.file_idx + file_pct) / self.total_files) * 100)
+            
+            # Clamp to 99% during download, 100% is reserved for final success
+            display_pct = max(5, min(99, overall_pct))
+            
+            self.signal.emit(f"Downloading {self.filename}: {int(file_pct*100)}%", display_pct)
 
     def set_description(self, desc, refresh=True): pass
     def close(self): pass
@@ -60,10 +70,11 @@ class DownloadWorker(QObject):
             else:
                 # Download files one by one for granular progress
                 for i, fname in enumerate(filenames):
-                    self.progress_signal.emit(f"Fetching {fname}...", 5 + int((i / len(filenames)) * 90))
+                    # Clean up stale partial files if any (locks are handled by hf_hub)
+                    # But if the whole dir is missing etc, os.makedirs already happened
                     
-                    # Create a bridge for tqdm
-                    bridge = ProgressBridge(fname, self.progress_signal)
+                    # Create a bridge for tqdm with multi-file context
+                    bridge = ProgressBridge(fname, self.progress_signal, i, len(filenames))
                     
                     hf_hub_download(
                         repo_id=repo_id,
@@ -81,6 +92,14 @@ class DownloadWorker(QObject):
         except Exception as exc:
             error_msg = str(exc)
             log.error("Download failed for %s: %s", repo_id, error_msg)
+            
+            # CRITICAL: Clean up partial files to avoid "Download Failed" stuck state on next attempt
+            if os.path.exists(local_dir):
+                log.warning("Cleaning up failed download directory: %s", local_dir)
+                try:
+                    shutil.rmtree(local_dir)
+                except Exception as cleanup_exc:
+                    log.error("Failed to cleanup directory: %s", cleanup_exc)
             
             if "401" in error_msg or "Unauthorized" in error_msg:
                 display_msg = "Error: Auth Required (Gated Model?)"
@@ -165,7 +184,11 @@ class ModelManager:
             },
             "llm-analysis": {
                 "repo": config.LLM_MODEL_ID,
-                "files": [], # Empty list triggers snapshot_download (full repo)
+                "files": [
+                    "config.json", "generation_config.json", "model.safetensors",
+                    "tokenizer.json", "tokenizer_config.json", "vocab.json",
+                    "merges.txt", "LICENSE", "README.md", ".gitattributes"
+                ],
                 "path": config.LLM_MODEL_PATH,
             },
             "blazeface": {
