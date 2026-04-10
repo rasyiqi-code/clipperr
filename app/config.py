@@ -50,16 +50,19 @@ BLAZEFACE_MODEL_PATH = os.path.join(MODELS_DIR, "mediapipe", "blaze_face_short_r
 YUNET_MODEL_PATH = os.path.join(MODELS_DIR, "opencv", "face_detection_yunet_2023mar.onnx")
 
 # FFmpeg Path - Direct pointer to bundled binaries (Self-contained)
+# Supports Windows (.exe) and Linux (no extension)
 FFMPEG_EXE = "ffmpeg"
 FFPROBE_EXE = "ffprobe"
-if sys.platform == "win32":
-    # BASE_DIR is where the .exe lives in production
-    local_ffmpeg = os.path.join(BASE_DIR, "ffmpeg.exe")
-    if os.path.exists(local_ffmpeg):
-        FFMPEG_EXE = local_ffmpeg
-    local_ffprobe = os.path.join(BASE_DIR, "ffprobe.exe")
-    if os.path.exists(local_ffprobe):
-        FFPROBE_EXE = local_ffprobe
+
+# Portable logic: Check for local bundle first
+local_ext = ".exe" if sys.platform == "win32" else ""
+local_ffmpeg = os.path.join(BASE_DIR, "ffmpeg" + local_ext)
+if os.path.exists(local_ffmpeg):
+    FFMPEG_EXE = local_ffmpeg
+    
+local_ffprobe = os.path.join(BASE_DIR, "ffprobe" + local_ext)
+if os.path.exists(local_ffprobe):
+    FFPROBE_EXE = local_ffprobe
 
 # ── Face Tracking ────────────────────────────────────
 FACE_TRACKING_SAMPLES = 20  # Increased slightly for better KLT stability
