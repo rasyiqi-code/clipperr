@@ -16,13 +16,13 @@ log = get_logger(__name__)
 class ProgressBridge:
     """Bridges tqdm progress from huggingface_hub to PySide6 signals.
     Implements full tqdm interface to avoid AttributeErrors."""
-    def __init__(self, filename, signal, file_idx=0, total_files=1, weights=None):
+    def __init__(self, filename, signal, file_idx=0, total_files=1, weights=None, **kwargs):
         self.filename = filename
         self.signal = signal
         self.file_idx = file_idx
         self.total_files = total_files
         self.weights = weights or {}
-        self.total = 0
+        self.total = kwargs.get('total', 0)
         self.current = 0
         
         # Calculate base progress from previous files
@@ -91,6 +91,9 @@ class DownloadWorker(QObject):
 
                 # Download files one by one for granular progress
                 for i, fname in enumerate(filenames):
+                    # Emit immediate status so it doesn't stay at "Starting..."
+                    self.progress_signal.emit(f"Connecting to {fname}...", 5 + int((i / len(filenames)) * 5))
+
                     # Create a bridge for tqdm with multi-file context and byte-weighting
                     bridge = ProgressBridge(fname, self.progress_signal, i, len(filenames), weights)
                     
