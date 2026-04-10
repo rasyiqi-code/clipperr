@@ -55,8 +55,9 @@ class ThumbnailService:
             # RS-2 fix: Boundary clamp with max(0, min(iw-crop_w, expr))
             crop_filter = f"crop=ih*9/16:ih:max(0\\,min(iw-ih*9/16\\,iw*{cx}-ih*9/16/2)):0,scale=1080:1920"
 
+            from config import FFMPEG_EXE
             cmd = [
-                "ffmpeg", "-y",
+                FFMPEG_EXE, "-y",
                 "-ss", str(extract_time),
                 "-i", video_path,
                 "-vframes", "1",

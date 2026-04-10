@@ -12,10 +12,11 @@ def get_audio_energy(video_path: str, timestamp_sec: float, duration_sec: float 
     NOTE: For batch operations, use AudioEnergyCache instead — it's 10-50x faster.
     """
     try:
+        import config
         start_time = max(0, timestamp_sec - 0.05)
         
         cmd = [
-            "ffmpeg",
+            config.FFMPEG_EXE,
             "-ss", str(start_time),
             "-t", str(duration_sec),
             "-i", video_path,
@@ -86,10 +87,10 @@ class AudioEnergyCache:
         cache_key = (video_path, actual_start, actual_duration)
         if self._cache_key == cache_key and self._samples is not None:
             return True  # Already cached
-        
         try:
+            from config import FFMPEG_EXE
             cmd = [
-                "ffmpeg",
+                FFMPEG_EXE,
                 "-ss", str(actual_start),
                 "-t", str(actual_duration),
                 "-i", video_path,

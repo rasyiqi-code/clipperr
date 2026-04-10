@@ -20,9 +20,8 @@ os.environ["HF_HUB_DISABLE_SYMLINKS"] = "1"
 if getattr(sys, 'frozen', False):
     exe_dir = os.path.dirname(sys.executable)
     if sys.platform == "win32":
-        # Add exe_dir to PATH so subprocess can find bundled ffmpeg.exe
+        # Add exe_dir to PATH as a background fallback
         os.environ["PATH"] = exe_dir + os.pathsep + os.environ.get("PATH", "")
-        print(f"Bundle detected. PATH updated with: {exe_dir}")
 
 # Suppress all non-essential UserWarnings (like torchcodec/cuda/FFmpeg version mismatches)
 # so the terminal stays clean for the user.
@@ -35,7 +34,7 @@ os.environ["AV_LOG_LEVEL"] = "quiet"
 
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
-    QLabel, QPushButton, QStackedWidget, QFrame, QMessageBox
+    QLabel, QPushButton, QStackedWidget, QFrame,
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
@@ -95,22 +94,6 @@ class clipperrApp(QMainWindow):
         # Connections
         self._home.file_selected.connect(self._process_video)
         self._home.cancel_requested.connect(self._cancel_processing)
-
-        # Startup Check
-        self._check_dependencies_on_start()
-
-    def _check_dependencies_on_start(self):
-        """Check if FFmpeg is available and alert the user if not."""
-        import shutil
-        if not shutil.which("ffmpeg"):
-            msg = (
-                "<b>FFmpeg Not Found!</b><br><br>"
-                "Clipperr requires FFmpeg to process videos.<br><br>"
-                "If you downloaded the ZIP file, please <b>'Extract All'</b> contents before running.<br>"
-                "Running directly from inside a ZIP will cause this error."
-            )
-            QMessageBox.critical(self, "Dependency Missing", msg)
-            log.error("FFmpeg not found in PATH or local directory.")
 
     # ══════════════════════════════════════════════════
     #  Sidebar
