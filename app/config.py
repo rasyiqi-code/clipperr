@@ -24,6 +24,7 @@ HISTORY_FILE = os.path.join(BASE_DIR, "history.json")
 
 WHISPER_MODEL_PATH = os.path.join(MODELS_DIR, "whisper", "base")
 LLM_MODEL_ID = "Qwen/Qwen2.5-0.5B-Instruct"
+LLM_MODEL_PATH = os.path.join(MODELS_DIR, "llm", "qwen")
 BLAZEFACE_MODEL_PATH = os.path.join(MODELS_DIR, "mediapipe", "blaze_face_short_range.tflite")
 YUNET_MODEL_PATH = os.path.join(MODELS_DIR, "opencv", "face_detection_yunet_2023mar.onnx")
 
@@ -87,6 +88,10 @@ class UserSettings:
         self.llm_provider = "local"  # 'local' or 'api'
         self.openrouter_key = ""
         self.openrouter_model = "google/gemini-2.0-flash-lite:free"
+        self.llm_max_tokens = 2048
+        self.llm_top_k = 40
+        self.llm_temperature = 0.7
+        self.max_viral_clips = 10
         self.load()
 
     def load(self):
@@ -103,6 +108,10 @@ class UserSettings:
                     self.llm_provider = data.get("llm_provider", "local")
                     self.openrouter_key = data.get("openrouter_key", "")
                     self.openrouter_model = data.get("openrouter_model", "google/gemini-2.0-flash-lite:free")
+                    self.llm_max_tokens = data.get("llm_max_tokens", 2048)
+                    self.llm_top_k = data.get("llm_top_k", 40)
+                    self.llm_temperature = data.get("llm_temperature", 0.7)
+                    self.max_viral_clips = data.get("max_viral_clips", 10)
             except Exception:
                 pass
 
@@ -119,6 +128,10 @@ class UserSettings:
                     "llm_provider": self.llm_provider,
                     "openrouter_key": self.openrouter_key,
                     "openrouter_model": self.openrouter_model,
+                    "llm_max_tokens": self.llm_max_tokens,
+                    "llm_top_k": self.llm_top_k,
+                    "llm_temperature": self.llm_temperature,
+                    "max_viral_clips": self.max_viral_clips,
                 }, f)
         except Exception:
             pass  # Fail silently — settings are non-critical

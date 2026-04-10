@@ -44,16 +44,34 @@ class SettingsPage(QScrollArea):
         layout.addWidget(title)
 
         # ── System Environment ───────────────────────
-        self._build_env_section(layout)
+        try:
+            self._build_env_section(layout)
+        except Exception as e:
+            layout.addWidget(QLabel(f"❌ Error loading Environment: {e}"))
 
         # ── Render Preferences ─────────────────────────
-        self._build_render_prefs_section(layout)
+        try:
+            self._build_render_prefs_section(layout)
+        except Exception as e:
+            layout.addWidget(QLabel(f"❌ Error loading Render Prefs: {e}"))
 
         # ── AI Engine Configuration ───────────────────
-        self._build_ai_config_section(layout)
+        try:
+            self._build_ai_config_section(layout)
+        except Exception as e:
+            layout.addWidget(QLabel(f"❌ Error loading AI Config: {e}"))
+
+        # ── LLM Analysis Parameters ──────────────────
+        try:
+            self._build_llm_analysis_section(layout)
+        except Exception as e:
+            layout.addWidget(QLabel(f"❌ Error loading LLM Analysis Params: {e}"))
 
         # ── AI Model Manager ─────────────────────────
-        self._build_model_section(layout)
+        try:
+            self._build_model_section(layout)
+        except Exception as e:
+            layout.addWidget(QLabel(f"❌ Error loading Model Manager: {e}"))
 
         layout.addStretch()
 
@@ -294,6 +312,89 @@ class SettingsPage(QScrollArea):
         self.api_settings_container.setVisible(prefs.llm_provider == "api")
         
         layout.addWidget(ai_card)
+
+    def _build_llm_analysis_section(self, layout: QVBoxLayout):
+        from config import prefs
+        from PySide6.QtWidgets import QSlider, QLineEdit
+        
+        llm_title = QLabel("LLM Analysis Parameters")
+        llm_title.setStyleSheet("font-size: 18px; font-weight: 700; color: #38bdf8; margin-top: 20px;")
+        layout.addWidget(llm_title)
+
+        llm_card = QFrame()
+        llm_card.setObjectName("ClipCard")
+        lc_layout = QVBoxLayout(llm_card)
+
+        # Max Clips
+        mc_layout = QHBoxLayout()
+        mc_label = QLabel("Max Clips per Video:")
+        mc_label.setStyleSheet("color: #e2e8f0; font-size: 13px;")
+        self.max_clips_input = QLineEdit()
+        self.max_clips_input.setFixedWidth(60)
+        self.max_clips_input.setText(str(prefs.max_viral_clips))
+        self.max_clips_input.setStyleSheet("background-color: #0f172a; border: 1px solid #1e293b; border-radius: 4px; padding: 4px; color: white;")
+        self.max_clips_input.textChanged.connect(self._on_max_clips_changed)
+        mc_layout.addWidget(mc_label)
+        mc_layout.addStretch()
+        mc_layout.addWidget(self.max_clips_input)
+        lc_layout.addLayout(mc_layout)
+
+        # Temperature
+        temp_layout = QHBoxLayout()
+        temp_label = QLabel("AI Creativity (Temperature):")
+        temp_label.setStyleSheet("color: #e2e8f0; font-size: 13px;")
+        self.temp_slider = QSlider(Qt.Horizontal)
+        self.temp_slider.setRange(1, 15) # 0.1 to 1.5
+        self.temp_slider.setValue(int(prefs.llm_temperature * 10))
+        self.temp_slider.setStyleSheet("""
+            QSlider::groove:horizontal { border: 1px solid #334155; height: 4px; background: #1e293b; border-radius: 2px; }
+            QSlider::handle:horizontal { background: #38bdf8; border: 1px solid #0ea5e9; width: 14px; margin: -5px 0; border-radius: 7px; }
+        """)
+        self.temp_val_label = QLabel(f"{prefs.llm_temperature:.1f}")
+        self.temp_val_label.setStyleSheet("color: #38bdf8; font-weight: bold; width: 30px;")
+        self.temp_slider.valueChanged.connect(self._on_temp_changed)
+        temp_layout.addWidget(temp_label)
+        temp_layout.addStretch()
+        temp_layout.addWidget(self.temp_slider)
+        temp_layout.addWidget(self.temp_val_label)
+        lc_layout.addLayout(temp_layout)
+
+        # Max Tokens
+        tok_layout = QHBoxLayout()
+        tok_label = QLabel("Max Tokens (Response Length):")
+        tok_label.setStyleSheet("color: #e2e8f0; font-size: 13px;")
+        self.tokens_input = QLineEdit()
+        self.tokens_input.setFixedWidth(80)
+        self.tokens_input.setText(str(prefs.llm_max_tokens))
+        self.tokens_input.setStyleSheet("background-color: #0f172a; border: 1px solid #1e293b; border-radius: 4px; padding: 4px; color: white;")
+        self.tokens_input.textChanged.connect(self._on_tokens_changed)
+        tok_layout.addWidget(tok_label)
+        tok_layout.addStretch()
+        tok_layout.addWidget(self.tokens_input)
+        lc_layout.addLayout(tok_layout)
+
+        layout.addWidget(llm_card)
+
+    def _on_max_clips_changed(self, text):
+        from config import prefs
+        try:
+            prefs.max_viral_clips = int(text)
+            prefs.save()
+        except ValueError: pass
+
+    def _on_temp_changed(self, val):
+        from config import prefs
+        temp = val / 10.0
+        prefs.llm_temperature = temp
+        self.temp_val_label.setText(f"{temp:.1f}")
+        prefs.save()
+
+    def _on_tokens_changed(self, text):
+        from config import prefs
+        try:
+            prefs.llm_max_tokens = int(text)
+            prefs.save()
+        except ValueError: pass
 
     def _on_ai_provider_changed(self, idx):
         from config import prefs

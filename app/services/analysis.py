@@ -32,13 +32,14 @@ class AnalysisService:
             import torch
             from transformers import pipeline
 
-            log.info("Initializing Hugging Face pipeline for %s...", self.model_id)
+            from config import LLM_MODEL_PATH
+            log.info("Initializing Hugging Face pipeline from local path: %s...", LLM_MODEL_PATH)
             device = "cuda" if torch.cuda.is_available() else "cpu"
             torch_dtype = torch.bfloat16 if device == "cuda" else torch.float32
 
             self.llm = pipeline(
                 "text-generation",
-                model=self.model_id,
+                model=LLM_MODEL_PATH,
                 device=device,
                 torch_dtype=torch_dtype,
                 model_kwargs={"low_cpu_mem_usage": True},
@@ -178,10 +179,9 @@ class AnalysisService:
                 unique_clips.append(c)
         
         # 2. Sort by scores if available, otherwise just count
-        # (Assuming local LLM or API might provide a 'score' or 'virality')
         unique_clips.sort(key=lambda x: x.get("score", 0.0), reverse=True)
         
-        return unique_clips[:MAX_VIRAL_CLIPS]
+        return unique_clips[:prefs.max_viral_clips]
 
     def unload_model(self):
         """Purge model from memory to free up resources for video processing."""
@@ -237,10 +237,10 @@ class AnalysisService:
             # We don't pass max_length at all here because we already set it to None in the model config
             outputs = self.llm(
                 messages,
-                max_new_tokens=LLM_MAX_TOKENS,
+                max_new_tokens=prefs.llm_max_tokens,
                 do_sample=True,
-                temperature=LLM_TEMPERATURE,
-                top_k=LLM_TOP_K,
+                temperature=prefs.llm_temperature,
+                top_k=prefs.llm_top_k,
                 pad_token_id=self.llm.tokenizer.eos_token_id if hasattr(self.llm, 'tokenizer') else None,
             )
             
@@ -332,8 +332,8 @@ class AnalysisService:
         payload = {
             "model": prefs.openrouter_model,
             "messages": [{"role": "user", "content": prompt}],
-            "temperature": LLM_TEMPERATURE,
-            "max_tokens": LLM_MAX_TOKENS,
+            "temperature": prefs.llm_temperature,
+            "max_tokens": prefs.llm_max_tokens,
         }
 
         try:
@@ -500,7 +500,7 @@ class AnalysisService:
         windows.sort(key=lambda x: x["density"], reverse=True)
 
         clips = []
-        for w in windows[:MAX_VIRAL_CLIPS]:
+        for w in windows[:prefs.max_viral_clips]:
             # PRO-EDITOR: More descriptive heuristic titles
             start_time = int(w['start'])
             clips.append({

@@ -165,8 +165,8 @@ class ModelManager:
             },
             "llm-analysis": {
                 "repo": config.LLM_MODEL_ID,
-                "files": ["config.json", "model.safetensors"], # Explicit check for Qwen
-                "path": os.path.join(os.path.expanduser("~"), ".cache", "huggingface", "hub", f"models--{config.LLM_MODEL_ID.replace('/', '--')}", "snapshots"),
+                "files": [], # Empty list triggers snapshot_download (full repo)
+                "path": config.LLM_MODEL_PATH,
             },
             "blazeface": {
                 "url": "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
@@ -187,19 +187,14 @@ class ModelManager:
         model_info = self.models[model_id]
         target_dir = model_info["path"]
         
-        # Special handling for snapshot-based paths (Qwen)
-        if "snapshots" in target_dir:
-            if not os.path.exists(target_dir):
-                return False
-            # Check if any snapshot subdirectory exists and contains required files
-            try:
-                for snapshot_id in os.listdir(target_dir):
-                    snap_path = os.path.join(target_dir, snapshot_id)
-                    if all(os.path.exists(os.path.join(snap_path, f)) for f in model_info["files"]):
-                        return True
-            except Exception:
-                pass
+        # Simplified check for local non-nested models (Whisper, LLM)
+        if not os.path.exists(target_dir):
             return False
+            
+        # If it's the LLM (no specific files listed), just check if the directory is non-empty
+        # and contains a config.json which is standard for HF models.
+        if not model_info["files"]:
+            return os.path.exists(os.path.join(target_dir, "config.json"))
             
         if not os.path.exists(target_dir):
             return False
