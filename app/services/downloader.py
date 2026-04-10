@@ -120,7 +120,10 @@ class DownloadWorker(QObject):
             if "401" in error_msg or "Unauthorized" in error_msg:
                 display_msg = "Error: Auth Required (Gated Model?)"
             else:
-                display_msg = f"Error: {error_msg[:60]}..." if len(error_msg) > 60 else f"Error: {error_msg}"
+                elif "disk" in error_msg.lower() or "space" in error_msg.lower():
+                display_msg = "Error: Disk Full!"
+            else:
+                display_msg = f"Error: {error_msg[:100]}" if len(error_msg) > 100 else f"Error: {error_msg}"
 
             self.progress_signal.emit(display_msg, 0)
             self.finished_signal.emit(repo_id, False)
