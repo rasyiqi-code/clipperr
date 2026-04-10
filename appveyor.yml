@@ -1,4 +1,4 @@
-version: 1.3.3.{build}
+version: 1.3.4.{build}
 image: Visual Studio 2022
 
 # Hanya build jika ada TAG (seperti v1.0.0)
@@ -34,8 +34,22 @@ install:
   - pip install pyinstaller
   
   # 5. Localize FFmpeg for PyInstaller (Binary Bundling)
-  - copy C:\Tools\ffmpeg\bin\ffmpeg.exe .
-  - copy C:\Tools\ffmpeg\bin\ffprobe.exe .
+  # Menggunakan PowerShell agar lebih fleksibel mencari lokasi ffmpeg
+  - ps: |
+      $ffmpeg = where.exe ffmpeg
+      if ($ffmpeg) {
+          $binDir = Split-Path -Parent $ffmpeg[0]
+          copy "$binDir\ffmpeg.exe" .
+          copy "$binDir\ffprobe.exe" .
+          echo "FFmpeg localized from: $binDir"
+      } else {
+          echo "FFmpeg not found in PATH, installing via choco..."
+          choco install ffmpeg -y --no-progress
+          $ffmpeg = where.exe ffmpeg
+          $binDir = Split-Path -Parent $ffmpeg[0]
+          copy "$binDir\ffmpeg.exe" .
+          copy "$binDir\ffprobe.exe" .
+      }
 
 build_script:
   # 1. Build Rust Core
