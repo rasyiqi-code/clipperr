@@ -117,6 +117,13 @@ class clipperrApp(QMainWindow):
             self._nav_btns.append(btn)
 
         layout.addStretch()
+        
+        # Branding Footer
+        footer = QLabel("Created by crediblemark.com")
+        footer.setStyleSheet("color: #475569; font-size: 10px; font-weight: bold; margin-bottom: 15px;")
+        footer.setAlignment(Qt.AlignCenter)
+        layout.addWidget(footer)
+        
         return sidebar
 
     def _switch_page(self, index: int):

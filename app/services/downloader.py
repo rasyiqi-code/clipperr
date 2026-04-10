@@ -69,8 +69,17 @@ class DownloadWorker(QObject):
 
     def download_model(self, repo_id: str, filenames: list[str], local_dir: str, token: str | None = None):
         try:
+            # 1. Check Directory Permissions early
+            if not config.is_writable(local_dir):
+                self.progress_signal.emit("Error: Access Denied! Run as Admin or choose different path.", 0)
+                self.finished_signal.emit(repo_id, False)
+                return
+
             os.makedirs(local_dir, exist_ok=True)
             log.info("Starting granular download for %s into %s", repo_id, local_dir)
+            
+            # Robustness: Increase ETAG timeout for large files on restricted networks
+            os.environ["HF_HUB_ETAG_TIMEOUT"] = "100"
             
             # If no files specified, use snapshot_download (likely a complex repo like Qwen)
             if not filenames:
@@ -97,14 +106,27 @@ class DownloadWorker(QObject):
                     # Create a bridge for tqdm with multi-file context and byte-weighting
                     bridge = ProgressBridge(fname, self.progress_signal, i, len(filenames), weights)
                     
-                    hf_hub_download(
-                        repo_id=repo_id,
-                        filename=fname,
-                        local_dir=local_dir,
-                        token=None,
-                        local_dir_use_symlinks=False,
-                        tqdm_class=lambda **kwargs: bridge # Inject our bridge as the tqdm class
-                    )
+                    # Retry loop (5 attempts) for resilience against ConnectionReset/Firewall
+                    max_retries = 5
+                    for attempt in range(max_retries):
+                        try:
+                            hf_hub_download(
+                                repo_id=repo_id,
+                                filename=fname,
+                                local_dir=local_dir,
+                                token=None,
+                                local_dir_use_symlinks=False,
+                                tqdm_class=lambda **kwargs: bridge # Inject our bridge as the tqdm class
+                            )
+                            break # Success!
+                        except Exception as e:
+                            if attempt < max_retries - 1:
+                                log.warning("Download attempt %d failed for %s: %s", attempt+1, fname, e)
+                                self.progress_signal.emit(f"Retrying {fname} ({attempt+2}/{max_retries})...", 5)
+                                import time
+                                time.sleep(2) # Exponential backoff would be better but fixed sleep is OK for now
+                            else:
+                                raise # Final attempt failed
 
             self.progress_signal.emit("Setup complete!", 100)
             self.finished_signal.emit(repo_id, True)
@@ -114,14 +136,17 @@ class DownloadWorker(QObject):
             error_msg = str(exc)
             log.error("Download failed for %s: %s", repo_id, error_msg)
             
-            # DO NOT clean up directory anymore—we want to support resuming large files.
-            # hf_hub_download handles its own .incomplete files.
-            
-            if "401" in error_msg or "Unauthorized" in error_msg:
+            # Diagnostic for common Windows failures
+            if "SSL" in error_msg:
+                display_msg = "Error: SSL/Certificate Mismatch. Check VPN/Firewall."
+            elif "Connection reset" in error_msg or "10054" in error_msg:
+                display_msg = "Error: Connection Reset by Firewall."
+            elif "401" in error_msg or "Unauthorized" in error_msg:
                 display_msg = "Error: Auth Required (Gated Model?)"
             elif "disk" in error_msg.lower() or "space" in error_msg.lower():
                 display_msg = "Error: Disk Full!"
             else:
+                # Show more of the error to help debug
                 display_msg = f"Error: {error_msg[:100]}" if len(error_msg) > 100 else f"Error: {error_msg}"
 
             self.progress_signal.emit(display_msg, 0)

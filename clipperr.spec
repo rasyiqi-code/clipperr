@@ -76,6 +76,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=['app/assets/icon.png'],
+    version='version_info.txt',
 )
 coll = COLLECT(
     exe,

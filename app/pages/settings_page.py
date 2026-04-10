@@ -455,15 +455,18 @@ class SettingsPage(QScrollArea):
         from config import prefs
         desc = QLabel("Manage your local AI models and application preferences.")
         desc.setStyleSheet("color: #94a3b8; margin-bottom: 20px;")
+        desc.setWordWrap(True)
         layout.addWidget(desc)
 
         section_title = QLabel("AI Model Manager")
         section_title.setStyleSheet("font-size: 18px; font-weight: 700; color: #38bdf8;")
+        section_title.setWordWrap(True)
         layout.addWidget(section_title)
 
         # Informational note about models
         info_label = QLabel("Note: AI models will be downloaded automatically from public repositories (HuggingFace/GitHub).")
         info_label.setStyleSheet("color: #64748b; font-size: 11px; font-style: italic; margin-top: 10px;")
+        info_label.setWordWrap(True)
         layout.addWidget(info_label)
 
         # Model cards
@@ -475,8 +478,10 @@ class SettingsPage(QScrollArea):
             v_info = QVBoxLayout()
             name = QLabel(model_id.upper().replace("-", " "))
             name.setStyleSheet("font-weight: 800; font-size: 14px;")
+            name.setWordWrap(True)
             repo_label = QLabel(info.get("repo", info.get("url", "")))
             repo_label.setStyleSheet("color: #64748b; font-size: 11px;")
+            repo_label.setWordWrap(True)
             v_info.addWidget(name)
             v_info.addWidget(repo_label)
 

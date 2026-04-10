@@ -12,15 +12,36 @@ import sys
 
 # Detect if the app is run as a bundle (PyInstaller)
 if getattr(sys, 'frozen', False):
-    # Running in a frozen bundle (.exe)
     BASE_DIR = os.path.dirname(sys.executable)
 else:
-    # Running in a normal Python environment
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-MODELS_DIR = os.path.join(BASE_DIR, "models")
-OUTPUT_DIR = os.path.join(BASE_DIR, "exports")
-HISTORY_FILE = os.path.join(BASE_DIR, "history.json")
+# Windows Robustness: Check if BASE_DIR is writable. 
+# If not (e.g. C:\Program Files), fallback to AppData for models/settings.
+def is_writable(path):
+    try:
+        if not os.path.exists(path):
+            os.makedirs(path, exist_ok=True)
+        test_file = os.path.join(path, ".write_test")
+        with open(test_file, "w") as f:
+            f.write("test")
+        os.remove(test_file)
+        return True
+    except Exception:
+        return False
+
+DATA_ROOT = BASE_DIR
+if sys.platform == "win32":
+    if not is_writable(BASE_DIR):
+        appdata = os.environ.get("APPDATA")
+        if appdata:
+            DATA_ROOT = os.path.join(appdata, "clipperr")
+            os.makedirs(DATA_ROOT, exist_ok=True)
+
+MODELS_DIR = os.path.join(DATA_ROOT, "models")
+OUTPUT_DIR = os.path.join(DATA_ROOT, "exports")
+HISTORY_FILE = os.path.join(DATA_ROOT, "history.json")
+USER_SETTINGS_FILE = os.path.join(DATA_ROOT, "user_settings.json")
 
 WHISPER_MODEL_PATH = os.path.join(MODELS_DIR, "whisper", "base")
 LLM_MODEL_ID = "Qwen/Qwen2.5-0.5B-Instruct"
@@ -74,7 +95,7 @@ WINDOW_DEFAULT_WIDTH = 1000
 WINDOW_DEFAULT_HEIGHT = 700
 
 # ── User Preferences ──────────────────────────────────
-USER_SETTINGS_FILE = os.path.join(BASE_DIR, "user_settings.json")
+# USER_SETTINGS_FILE is now defined above with DATA_ROOT fallback
 
 class UserSettings:
     """Simple JSON-based persistent dynamic settings."""
