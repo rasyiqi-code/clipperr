@@ -35,7 +35,7 @@ os.environ["AV_LOG_LEVEL"] = "quiet"
 
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
-    QLabel, QPushButton, QStackedWidget, QFrame,
+    QLabel, QPushButton, QStackedWidget, QFrame, QMessageBox
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
@@ -95,6 +95,22 @@ class clipperrApp(QMainWindow):
         # Connections
         self._home.file_selected.connect(self._process_video)
         self._home.cancel_requested.connect(self._cancel_processing)
+
+        # Startup Check
+        self._check_dependencies_on_start()
+
+    def _check_dependencies_on_start(self):
+        """Check if FFmpeg is available and alert the user if not."""
+        import shutil
+        if not shutil.which("ffmpeg"):
+            msg = (
+                "<b>FFmpeg Not Found!</b><br><br>"
+                "Clipperr requires FFmpeg to process videos.<br><br>"
+                "If you downloaded the ZIP file, please <b>'Extract All'</b> contents before running.<br>"
+                "Running directly from inside a ZIP will cause this error."
+            )
+            QMessageBox.critical(self, "Dependency Missing", msg)
+            log.error("FFmpeg not found in PATH or local directory.")
 
     # ══════════════════════════════════════════════════
     #  Sidebar
