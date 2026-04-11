@@ -213,6 +213,8 @@ class AnalysisService:
         """Robustly repair common LLM JSON mistakes."""
         # 1. Basic cleaning
         json_str = json_str.strip()
+        if not json_str:
+            return "[]"
         
         # 2. Support markdown fences
         if "```json" in json_str:
@@ -225,6 +227,12 @@ class AnalysisService:
         end_idx = json_str.rfind("]")
         if start_idx != -1 and end_idx != -1:
             json_str = json_str[start_idx : end_idx + 1]
+        elif start_idx != -1:
+            # Truncated JSON: Starts but never ends
+            json_str = json_str[start_idx:] + "]"
+        else:
+            # No JSON brackets found, return empty list to avoid crashing
+            return "[]"
 
         # 4. Remove single-line comments
         json_str = re.sub(r'//.*', '', json_str)
@@ -233,22 +241,29 @@ class AnalysisService:
         json_str = re.sub(r'([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)(\s*:)', r'\1"\2"\3', json_str)
         
         # 6. Support single quotes (only if clearly used as delimiters to avoid breaking words like "don't")
-        # Replace ' at start of key/value or end of key/value
         json_str = re.sub(r"\'(\s*[:}\],])", r'"\1', json_str) # Trailing single quote
         json_str = re.sub(r"([{\[,:\s])\'", r'\1"', json_str) # Leading single quote
 
-        # 7. Add missing commas between key-value pairs (the most common Gemma error)
-        # Pattern: value followed by space and then "key":
+        # 7. Add missing commas between key-value pairs OR between objects
+        # Pattern 1: value followed by space and then "key":
         json_str = re.sub(r'("|\d|true|false|null)\s+(")', r'\1, \2', json_str)
+        # Pattern 2: object end followed by object start: } { -> }, {
+        json_str = json_str.replace("} {", "}, {")
         
         # 8. Handle trailing commas which break strict json.loads
         json_str = re.sub(r',\s*]', ']', json_str)
         json_str = re.sub(r',\s*}', '}', json_str)
 
-        # 9. Final safety: remove invalid escapes like \' which often appear in LLM output
-        # but are invalid in strict JSON (which only allows \")
+        # 9. Final safety: remove invalid escapes
         json_str = json_str.replace("\\'", "'")
         
+        # 10. Recursive repair for truncated objects inside list
+        # If it ends with "...", try to close it
+        if json_str.endswith("..."):
+            json_str = json_str[:-3].strip()
+            if not json_str.endswith("}"): json_str += "}"
+            if not json_str.endswith("]"): json_str += "]"
+
         return json_str
 
     # ══════════════════════════════════════════════════
@@ -285,7 +300,7 @@ class AnalysisService:
                 torch.set_num_threads(multiprocessing.cpu_count())
 
             # Specific call to avoid transformers warning about conflicting max_length vs max_new_tokens
-            # We don't pass max_length at all here because we already set it to None in the model config
+            # We use return_full_text=False to ONLY get the model's new generation
             outputs = self.llm(
                 messages,
                 max_new_tokens=prefs.llm_max_tokens,
@@ -293,34 +308,46 @@ class AnalysisService:
                 temperature=prefs.llm_temperature,
                 top_k=prefs.llm_top_k,
                 pad_token_id=self.llm.tokenizer.eos_token_id if hasattr(self.llm, 'tokenizer') else None,
+                return_full_text=False
             )
             
-            # Robust extraction: handle both Chat and TextGen pipeline formats
-            raw_output = outputs[0]["generated_text"]
-            if isinstance(raw_output, list) and len(raw_output) > 0:
-                # Chat format: last message content
-                response = raw_output[-1].get("content", "")
+            # Extract response text
+            # Depending on model/version, response could be in different keys
+            raw_gen = outputs[0]
+            if "generated_text" in raw_gen:
+                response = raw_gen["generated_text"]
             else:
-                # Raw text format: just the string
-                response = str(raw_output)
+                response = str(raw_gen)
             
+            # Fallback if text-generation returns a list of messages instead of a string
+            if isinstance(response, list) and len(response) > 0:
+                response = response[-1].get("content", "")
+            
+            if not response or not response.strip():
+                log.warning("AI returned empty generation. Falling back to heuristic.")
+                return self._heuristic_analyze(transcript_segments)
+
             json_str = self._repair_json(response)
             log.debug("Repaired LLM JSON: %s", json_str)
 
             try:
                 clips = json.loads(json_str)
             except json.JSONDecodeError as jde:
-                # One last attempt: escape quotes inside strings if they are raw (common LLM mistake)
+                # Last-ditch attempt: check if it's already just '[]' from repair
+                if json_str == "[]":
+                    return []
+                    
+                # Very basic attempt to fix unescaped quotes in middle of strings
                 try:
-                    # Very basic attempt to fix unescaped quotes in middle of strings
-                    # only if there's a simple pattern "key": "value with "quotes" "
                     json_str_fixed = re.sub(r'":\s*"(.*)"\s*([,}])', 
                                             lambda m: '": "' + m.group(1).replace('"', '\\"') + '"' + m.group(2), 
                                             json_str)
                     clips = json.loads(json_str_fixed)
                 except:
-                    log.error("Failed to parse LLM JSON. Repaired output: %s", json_str)
-                    raise Exception(f"AI produced invalid JSON output. Error: {jde}")
+                    log.error("Failed to parse LLM JSON. Raw snippet: %s...", response[:200])
+                    # Graceful degradation: heuristic instead of hard crash
+                    log.warning("Falling back to heuristic analysis due to JSON failure.")
+                    return self._heuristic_analyze(transcript_segments)
 
             # Normalize keys to ensure UI fields exist
             if not isinstance(clips, list):
