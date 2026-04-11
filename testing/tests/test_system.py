@@ -4,7 +4,7 @@ import os
 import sys
 
 # Ensure 'app' directory is in the path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'app'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'app'))
 
 class TestSystem(unittest.TestCase):
     def test_ffmpeg_available(self):

@@ -274,14 +274,30 @@ class AnalysisService:
             json_str = re.sub(r',\s*}', '}', json_str) # Trailing comma in object
 
             try:
+                # Robust parsing: Sometimes LLM outputs slightly broken JSON or markdown junk
                 clips = json.loads(json_str)
             except json.JSONDecodeError as jde:
-                log.error("Failed to parse LLM JSON. Raw output: %s", response)
-                raise Exception(f"AI produced invalid JSON output. Error: {jde}")
+                # One last attempt: escape quotes inside strings if they are raw (common LLM mistake)
+                try:
+                    # Very basic attempt to fix unescaped quotes in middle of strings
+                    # only if there's a simple pattern "key": "value with "quotes" "
+                    json_str_fixed = re.sub(r'":\s*"(.*)"\s*([,}])', 
+                                            lambda m: '": "' + m.group(1).replace('"', '\\"') + '"' + m.group(2), 
+                                            json_str)
+                    clips = json.loads(json_str_fixed)
+                except:
+                    log.error("Failed to parse LLM JSON. Raw output: %s", response)
+                    raise Exception(f"AI produced invalid JSON output. Error: {jde}")
 
             # Normalize keys to ensure UI fields exist
+            if not isinstance(clips, list):
+                if isinstance(clips, dict): clips = [clips]
+                else: raise Exception("AI returned non-list format.")
+
             normalized_clips = []
             for c in clips:
+                if not isinstance(c, dict):
+                    continue
                 # Map common AI variations back to our schema
                 norm = {
                     "start": c.get("start", 0.0),
@@ -428,9 +444,15 @@ class AnalysisService:
                     temperature=0.8,
                     do_sample=True,
                     max_length=None,
-                    pad_token_id=self.llm.tokenizer.eos_token_id,
+                    pad_token_id=self.llm.tokenizer.eos_token_id if hasattr(self.llm, 'tokenizer') else None,
                 )
-                res = outputs[0]["generated_text"][-1]["content"]
+                
+                raw_res = outputs[0]["generated_text"]
+                if isinstance(raw_res, list) and len(raw_res) > 0:
+                    res = raw_res[-1].get("content", "")
+                else:
+                    res = str(raw_res)
+                
                 results.append(res.strip().strip('"*\'').upper())
             return results
         except Exception as e:

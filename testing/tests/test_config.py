@@ -4,7 +4,7 @@ import json
 import sys
 
 # Ensure 'app' directory is in the path so we can import modules
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'app'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'app'))
 
 from config import UserSettings, USER_SETTINGS_FILE
 

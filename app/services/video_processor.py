@@ -76,7 +76,17 @@ class VideoProcessor:
         # 5. Analyze Moments
         if progress_callback:
             progress_callback("Analyzing viral moments...", 45)
-        viral_clips, analysis_errors = self.analyzer.analyze_transcript(segments)
+        
+        def analysis_progress_wrapper(pct):
+            if progress_callback:
+                # Scale 0.0-1.0 progress from AnalysisService into the 45% - 49% range
+                p_val = 45 + int(pct * 4)
+                progress_callback(f"Analyzing viral moments ({int(pct*100)}%)...", p_val)
+
+        viral_clips, analysis_errors = self.analyzer.analyze_transcript(
+            segments, 
+            progress_callback=analysis_progress_wrapper
+        )
         
         # 5.5 Batch Clickbait Generation (Memory Safety: Do this BEFORE rendering loop)
         if viral_clips and prefs.auto_thumbnail:
@@ -116,7 +126,8 @@ class VideoProcessor:
                 
                 # Get dynamic panning data (center_x fallback + keyframes for smooth panning)
                 center_x, keyframes = self._get_dynamic_focus(
-                    video_path, clip["start"], clip["end"]
+                    video_path, clip["start"], clip["end"],
+                    progress_callback=progress_callback
                 )
                 
                 # Serialize keyframes for Rust core
@@ -206,7 +217,7 @@ class VideoProcessor:
     # ══════════════════════════════════════════════════
     #  Dynamic Focus (Keyframe Generator with KLT)
     # ══════════════════════════════════════════════════
-    def _get_dynamic_focus(self, video_path: str, start: float, end: float) -> tuple[float, list[dict]]:
+    def _get_dynamic_focus(self, video_path: str, start: float, end: float, progress_callback=None) -> tuple[float, list[dict]]:
         """
         Generate dynamic panning keyframes for a clip using BlazeFace + KLT Tracker.
         """
