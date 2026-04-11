@@ -43,7 +43,6 @@ class AnalysisService:
                 device=device,
                 torch_dtype=torch_dtype,
                 model_kwargs={"low_cpu_mem_usage": True},
-                local_files_only=True  # Force offline mode at pipeline level
             )
             # Force remove default max_length to stop the warning about conflicting with max_new_tokens
             if hasattr(self.llm, "model") and hasattr(self.llm.model, "generation_config"):
