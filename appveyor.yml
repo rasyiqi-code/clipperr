@@ -1,4 +1,4 @@
-version: 1.3.7.{build}
+version: 1.3.8.{build}
 image: Visual Studio 2022
 
 # Hanya build jika ada TAG (seperti v1.0.0)
@@ -34,21 +34,29 @@ install:
   - pip install pyinstaller
   
   # 5. Localize FFmpeg for PyInstaller (Binary Bundling)
-  # Menggunakan PowerShell agar lebih fleksibel mencari lokasi ffmpeg
   - ps: |
-      $ffmpeg = where.exe ffmpeg
-      if ($ffmpeg) {
-          $binDir = Split-Path -Parent $ffmpeg[0]
-          copy "$binDir\ffmpeg.exe" .
-          copy "$binDir\ffprobe.exe" .
-          echo "FFmpeg localized from: $binDir"
-      } else {
-          echo "FFmpeg not found in PATH, installing via choco..."
+      $chocoBin = "C:\ProgramData\chocolatey\bin"
+      $targetFfmpeg = Join-Path $chocoBin "ffmpeg.exe"
+      
+      if (-not (Test-Path $targetFfmpeg)) {
+          echo "FFmpeg not found. Installing via choco..."
           choco install ffmpeg -y --no-progress
-          $ffmpeg = where.exe ffmpeg
-          $binDir = Split-Path -Parent $ffmpeg[0]
-          copy "$binDir\ffmpeg.exe" .
-          copy "$binDir\ffprobe.exe" .
+      }
+      
+      if (Test-Path $targetFfmpeg) {
+          copy $targetFfmpeg .
+          copy (Join-Path $chocoBin "ffprobe.exe") .
+          echo "FFmpeg localized from Chocolatey bin."
+      } else {
+          # Last resort detection
+          $where = where.exe ffmpeg
+          if ($where) { 
+              copy $where[0] . 
+              echo "FFmpeg localized via 'where' fallback."
+          } else {
+              echo "CRITICAL: FFmpeg still not found!"
+              exit 1
+          }
       }
 
 build_script:
