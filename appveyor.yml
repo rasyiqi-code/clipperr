@@ -1,4 +1,4 @@
-version: 1.4.0.{build}
+version: 1.4.1.{build}
 image: Visual Studio 2022
 
 # Hanya build jika ada TAG (seperti v1.0.0)

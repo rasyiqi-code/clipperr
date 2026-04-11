@@ -200,11 +200,63 @@ class AnalysisService:
         log.info("LLM unloaded successfully.")
 
     # ══════════════════════════════════════════════════
+    #  Helpers
+    # ══════════════════════════════════════════════════
+    def _sanitize_transcript(self, text: str) -> str:
+        """Sanitize transcript to prevent prompt injection and formatting issues."""
+        # Remove character that might look like prompt instructions or break JSON
+        text = text.replace('"', "'")  # Replace double quotes with single to avoid JSON nesting issues
+        text = re.sub(r'([\\`])', r'\\\1', text) # Escape backslashes and backticks
+        return text.strip()
+
+    def _repair_json(self, json_str: str) -> str:
+        """Robustly repair common LLM JSON mistakes."""
+        # 1. Basic cleaning
+        json_str = json_str.strip()
+        
+        # 2. Support markdown fences
+        if "```json" in json_str:
+            json_str = json_str.split("```json")[1].split("```")[0].strip()
+        elif "```" in json_str:
+            json_str = json_str.split("```")[1].split("```")[0].strip()
+            
+        # 3. Robust extraction: find first '[' and last ']' (our schema is always a list)
+        start_idx = json_str.find("[")
+        end_idx = json_str.rfind("]")
+        if start_idx != -1 and end_idx != -1:
+            json_str = json_str[start_idx : end_idx + 1]
+
+        # 4. Remove single-line comments
+        json_str = re.sub(r'//.*', '', json_str)
+        
+        # 5. Support unquoted keys (e.g., { start: 10 } -> { "start": 10 })
+        json_str = re.sub(r'([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)(\s*:)', r'\1"\2"\3', json_str)
+        
+        # 6. Support single quotes (only if clearly used as delimiters to avoid breaking words like "don't")
+        # Replace ' at start of key/value or end of key/value
+        json_str = re.sub(r"\'(\s*[:}\],])", r'"\1', json_str) # Trailing single quote
+        json_str = re.sub(r"([{\[,:\s])\'", r'\1"', json_str) # Leading single quote
+
+        # 7. Add missing commas between key-value pairs (the most common Gemma error)
+        # Pattern: value followed by space and then "key":
+        json_str = re.sub(r'("|\d|true|false|null)\s+(")', r'\1, \2', json_str)
+        
+        # 8. Handle trailing commas which break strict json.loads
+        json_str = re.sub(r',\s*]', ']', json_str)
+        json_str = re.sub(r',\s*}', '}', json_str)
+
+        # 9. Final safety: remove invalid escapes like \' which often appear in LLM output
+        # but are invalid in strict JSON (which only allows \")
+        json_str = json_str.replace("\\'", "'")
+        
+        return json_str
+
+    # ══════════════════════════════════════════════════
     #  LLM analysis
     # ══════════════════════════════════════════════════
     def _llm_analyze(self, transcript_segments: list[dict]) -> list[dict]:
         full_transcript = [
-            f"[{s['start']:.2f}-{s['end']:.2f}] {s['text']}"
+            f"[{s['start']:.2f}-{s['end']:.2f}] {self._sanitize_transcript(s['text'])}"
             for s in transcript_segments
         ]
         context_text = "\n".join(full_transcript)
@@ -252,29 +304,10 @@ class AnalysisService:
                 # Raw text format: just the string
                 response = str(raw_output)
             
-            json_str = response.strip()
-
-            log.debug("Raw LLM response: %s", json_str)
-
-            # Extract JSON from possible markdown fences or just find the first [ and last ]
-            if "```json" in json_str:
-                json_str = json_str.split("```json")[1].split("```")[0].strip()
-            elif "```" in json_str:
-                json_str = json_str.split("```")[1].split("```")[0].strip()
-            
-            # Robust extraction: find first '[' and last ']'
-            start_idx = json_str.find("[")
-            end_idx = json_str.rfind("]")
-            if start_idx != -1 and end_idx != -1:
-                json_str = json_str[start_idx : end_idx + 1]
-
-            # VP-FIX: Strip comments (//...) and trailing commas which break strict json.loads
-            json_str = re.sub(r'//.*', '', json_str)
-            json_str = re.sub(r',\s*]', ']', json_str) # Trailing comma in array
-            json_str = re.sub(r',\s*}', '}', json_str) # Trailing comma in object
+            json_str = self._repair_json(response)
+            log.debug("Repaired LLM JSON: %s", json_str)
 
             try:
-                # Robust parsing: Sometimes LLM outputs slightly broken JSON or markdown junk
                 clips = json.loads(json_str)
             except json.JSONDecodeError as jde:
                 # One last attempt: escape quotes inside strings if they are raw (common LLM mistake)
@@ -286,7 +319,7 @@ class AnalysisService:
                                             json_str)
                     clips = json.loads(json_str_fixed)
                 except:
-                    log.error("Failed to parse LLM JSON. Raw output: %s", response)
+                    log.error("Failed to parse LLM JSON. Repaired output: %s", json_str)
                     raise Exception(f"AI produced invalid JSON output. Error: {jde}")
 
             # Normalize keys to ensure UI fields exist
@@ -322,7 +355,7 @@ class AnalysisService:
             raise Exception("OpenRouter API Key is missing. Please set it in Settings.")
 
         full_transcript = [
-            f"[{s['start']:.2f}-{s['end']:.2f}] {s['text']}"
+            f"[{s['start']:.2f}-{s['end']:.2f}] {self._sanitize_transcript(s['text'])}"
             for s in transcript_segments
         ]
         context_text = "\n".join(full_transcript)
@@ -364,27 +397,12 @@ class AnalysisService:
             
             content = data["choices"][0]["message"]["content"].strip()
             
-            # Extract JSON from possible markdown fences or find the first [ and last ]
-            if "```json" in content:
-                content = content.split("```json")[1].split("```")[0].strip()
-            elif "```" in content:
-                content = content.split("```")[1].split("```")[0].strip()
+            content = self._repair_json(content)
             
-            # Robust extraction: find first '[' and last ']'
-            start_idx = content.find("[")
-            end_idx = content.rfind("]")
-            if start_idx != -1 and end_idx != -1:
-                content = content[start_idx : end_idx + 1]
-
-            # VP-FIX: Strip comments and trailing commas
-            content = re.sub(r'//.*', '', content)
-            content = re.sub(r',\s*]', ']', content)
-            content = re.sub(r',\s*}', '}', content)
-
             try:
                 clips = json.loads(content)
             except json.JSONDecodeError as jde:
-                log.error("Failed to parse API JSON. Raw content: %s", content)
+                log.error("Failed to parse API JSON. Repaired content: %s", content)
                 raise Exception(f"API produced invalid JSON output. Error: {jde}")
             
             # Normalize
