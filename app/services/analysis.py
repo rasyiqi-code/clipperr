@@ -332,22 +332,22 @@ class AnalysisService:
 
             try:
                 clips = json.loads(json_str)
-            except json.JSONDecodeError as jde:
-                # Last-ditch attempt: check if it's already just '[]' from repair
-                if json_str == "[]":
-                    return []
-                    
-                # Very basic attempt to fix unescaped quotes in middle of strings
-                try:
-                    json_str_fixed = re.sub(r'":\s*"(.*)"\s*([,}])', 
-                                            lambda m: '": "' + m.group(1).replace('"', '\\"') + '"' + m.group(2), 
-                                            json_str)
-                    clips = json.loads(json_str_fixed)
-                except:
-                    log.error("Failed to parse LLM JSON. Raw snippet: %s...", response[:200])
-                    # Graceful degradation: heuristic instead of hard crash
-                    log.warning("Falling back to heuristic analysis due to JSON failure.")
-                    return self._heuristic_analyze(transcript_segments)
+            except json.JSONDecodeError:
+                # AN-2 Fallback: If JSON fails, try to parse it as a conversational list
+                log.info("JSON parsing failed, attempting conversational list recovery...")
+                clips = self._try_parse_conversational_list(response)
+                
+                if not clips:
+                    # Very basic attempt to fix unescaped quotes in middle of strings
+                    try:
+                        json_str_fixed = re.sub(r'":\s*"(.*)"\s*([,}])', 
+                                                lambda m: '": "' + m.group(1).replace('"', '\\"') + '"' + m.group(2), 
+                                                json_str)
+                        clips = json.loads(json_str_fixed)
+                    except:
+                        log.error("Failed to parse LLM JSON. Raw snippet: %s...", response[:200])
+                        log.warning("Falling back to heuristic analysis due to JSON failure.")
+                        return self._heuristic_analyze(transcript_segments)
 
             # Normalize keys to ensure UI fields exist
             if not isinstance(clips, list):
@@ -360,8 +360,8 @@ class AnalysisService:
                     continue
                 # Map common AI variations back to our schema
                 norm = {
-                    "start": c.get("start", 0.0),
-                    "end": c.get("end", 0.0),
+                    "start": self._parse_timestamp(c.get("start")),
+                    "end": self._parse_timestamp(c.get("end")),
                     "title": c.get("title") or c.get("heading") or c.get("name") or "Viral Clip",
                     "description": c.get("description") or c.get("explanation") or "No description provided.",
                     "hashtags": c.get("hashtags") or "#viral #ai #shorts",
@@ -375,6 +375,79 @@ class AnalysisService:
         except Exception as exc:
             log.error("LLM inference error: %s", exc)
             raise Exception(f"Local AI Inference error: {exc}")
+
+    def _try_parse_conversational_list(self, text: str) -> list[dict]:
+        """
+        Fallback parser for cases where the LLM returns a conversational list
+        instead of JSON.
+        Matches patterns like: "1. [10.5-20.3] - Interesting moment"
+        """
+        clips = []
+        # Pattern matches: 
+        # 1. Start bracket '['
+        # 2. Start time (float or HH:MM:SS)
+        # 3. Separator '-' or 'to'
+        # 4. End time
+        # 5. End bracket ']'
+        # 6. Optional separator ': ' or ' - '
+        # 7. The description/title
+        pattern = r'\[([\d:.]+)\s*(?:-|to)\s*([\d:.]+)\][ \-:]*(.*)'
+        
+        lines = text.split('\n')
+        current_clip = None
+        
+        for line in lines:
+            match = re.search(pattern, line)
+            if match:
+                # If we found a new timestamp, save previous and start new
+                if current_clip:
+                    clips.append(current_clip)
+                
+                start_raw, end_raw, desc_raw = match.groups()
+                
+                current_clip = {
+                    "start": self._parse_timestamp(start_raw),
+                    "end": self._parse_timestamp(end_raw),
+                    "title": desc_raw.split('.')[0].strip() if desc_raw else "Viral Highlight",
+                    "description": desc_raw.strip(),
+                    "explanation": desc_raw.strip(),
+                    "hashtags": "#viral #highlight"
+                }
+            elif current_clip and line.strip().startswith(('-', '   ')):
+                # Append subsequent bullet points to the description
+                clean_line = line.strip().lstrip('-').strip()
+                if clean_line:
+                    current_clip["description"] += " " + clean_line
+                    current_clip["explanation"] += " " + clean_line
+        
+        if current_clip:
+            clips.append(current_clip)
+            
+        return clips
+
+    def _parse_timestamp(self, ts) -> float:
+        """Helper to parse either float or HH:MM:SS string to seconds."""
+        if ts is None: return 0.0
+        if isinstance(ts, (int, float)): return float(ts)
+        
+        ts_str = str(ts).strip()
+        if not ts_str: return 0.0
+        
+        # Handle HH:MM:SS or MM:SS
+        if ':' in ts_str:
+            parts = ts_str.split(':')
+            try:
+                if len(parts) == 3: # HH:MM:SS
+                    return int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2])
+                elif len(parts) == 2: # MM:SS
+                    return int(parts[0]) * 60 + float(parts[1])
+            except:
+                pass
+        
+        try:
+            return float(ts_str)
+        except:
+            return 0.0
 
     def _api_analyze(self, transcript_segments: list[dict]) -> list[dict]:
         """Call OpenRouter API to analyze transcript."""

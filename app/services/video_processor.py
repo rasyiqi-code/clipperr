@@ -16,6 +16,7 @@ from config import (
     TRANSCRIPTION_LANGUAGE, FACE_TRACKING_SAMPLES,
     FACE_CLUSTER_THRESHOLD, FACE_TEMPORAL_ALPHA,
     CAMERA_CUT_AREA_RATIO, CAMERA_CUT_POSITION_SHIFT, CAMERA_CUT_MIN_SEGMENT,
+    FFMPEG_EXE, FFPROBE_EXE,
 )
 from logger import get_logger
 
@@ -54,7 +55,7 @@ class VideoProcessor:
         # 1. Metadata
         if progress_callback:
             progress_callback("Extracting metadata...", 5)
-        metadata = clipperr_core.extract_metadata(video_path)
+        metadata = clipperr_core.extract_metadata(FFPROBE_EXE, video_path)
 
         # 2. Check Models (Diarization Removed, Face → BlazeFace)
         for m in ["whisper-base", "llm-analysis", "blazeface", "yunet-face"]:
@@ -162,6 +163,7 @@ class VideoProcessor:
                     })
 
                 clipperr_core.render_clip(
+                    FFMPEG_EXE,
                     video_path, output_path,
                     clip["start"],
                     clip["end"] - clip["start"],

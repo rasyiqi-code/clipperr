@@ -49,20 +49,39 @@ LLM_MODEL_PATH = os.path.join(MODELS_DIR, "llm", "qwen")
 BLAZEFACE_MODEL_PATH = os.path.join(MODELS_DIR, "mediapipe", "blaze_face_short_range.tflite")
 YUNET_MODEL_PATH = os.path.join(MODELS_DIR, "opencv", "face_detection_yunet_2023mar.onnx")
 
-# FFmpeg Path - Direct pointer to bundled binaries (Self-contained)
-# Supports Windows (.exe) and Linux (no extension)
-FFMPEG_EXE = "ffmpeg"
-FFPROBE_EXE = "ffprobe"
+# ── Binary Discovery (Robust Windows support) ────────
+def get_binary_path(name):
+    """
+    Finds a binary (ffmpeg/ffprobe) across different execution contexts.
+    Priority: 
+    1. PyInstaller Internal (_MEIPASS)
+    2. Application Root (BASE_DIR)
+    3. System PATH
+    """
+    ext = ".exe" if sys.platform == "win32" else ""
+    full_name = f"{name}{ext}"
 
-# Portable logic: Check for local bundle first
-local_ext = ".exe" if sys.platform == "win32" else ""
-local_ffmpeg = os.path.join(BASE_DIR, "ffmpeg" + local_ext)
-if os.path.exists(local_ffmpeg):
-    FFMPEG_EXE = local_ffmpeg
-    
-local_ffprobe = os.path.join(BASE_DIR, "ffprobe" + local_ext)
-if os.path.exists(local_ffprobe):
-    FFPROBE_EXE = local_ffprobe
+    # 1. Check PyInstaller internal bundle directory
+    if hasattr(sys, '_MEIPASS'):
+        bundle_path = os.path.join(sys._MEIPASS, full_name)
+        if os.path.exists(bundle_path):
+            return bundle_path
+
+    # 2. Check local directory (portable build)
+    local_path = os.path.join(BASE_DIR, full_name)
+    if os.path.exists(local_path):
+        return local_path
+
+    # 3. Check System PATH (only if not found elsewhere)
+    import shutil
+    sys_path = shutil.which(name)
+    if sys_path:
+        return sys_path
+        
+    return name # Fallback to string name (likely to fail if not in PATH)
+
+FFMPEG_EXE = get_binary_path("ffmpeg")
+FFPROBE_EXE = get_binary_path("ffprobe")
 
 # ── Face Tracking ────────────────────────────────────
 FACE_TRACKING_SAMPLES = 20  # Increased slightly for better KLT stability

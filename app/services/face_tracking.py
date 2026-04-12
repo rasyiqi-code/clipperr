@@ -158,16 +158,7 @@ class FaceTrackingService:
     def _detect_faces_internal(self, frame, y_gate: float, min_area: float, 
                                 unconfirmed_score_min: float) -> list[dict]:
         """
-        Internal face detection with configurable thresholds.
-        
-        Args:
-            frame: BGR image (numpy array)
-            y_gate: Max normalized Y-position for a valid face
-            min_area: Min normalized area for a valid detection
-            unconfirmed_score_min: Min YuNet score for detections without landmarks
-        
-        Returns:
-            List of face dicts with center_x, center_y, score, area, mouth_score, etc.
+        Internal face detection with localized validation (FT-1 Optimization).
         """
         if not self._yunet:
             if not self.load_model():
@@ -177,17 +168,10 @@ class FaceTrackingService:
             h, w, _ = frame.shape
             self._yunet.setInputSize((w, h))
             
-            # 1. YuNet Detection
+            # 1. Primary fast detection via YuNet
             _, detections = self._yunet.detect(frame)
             if detections is None:
                 return []
-            
-            # 2. MediaPipe Detection
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
-            mp_result = self._detector.detect(mp_image) if self._detector else None
-            
-            mp_detections = mp_result.detections if mp_result else []
             
             results = []
             
@@ -196,16 +180,13 @@ class FaceTrackingService:
                 score = det[-1]
                 
                 # ── Filter 1: Aspect Ratio ──
-                # Faces should be roughly 1:1 or 1:1.5. 
-                # Relaxed for profiles (can be narrower).
                 aspect = det_h / det_w if det_w > 0 else 0
-                if aspect < 0.6 or aspect > 2.5: # More tolerant for turning heads
+                if aspect < 0.6 or aspect > 2.5:
                     continue
 
                 # ── Filter 2: Y-Position Gate ──
                 center_y = (y_min + det_h / 2) / h
                 if center_y > y_gate:
-                    # In desperation mode (y_gate=1.0), this will never trigger.
                     continue
                 
                 # ── Filter 3: Minimum Area ──
@@ -215,32 +196,31 @@ class FaceTrackingService:
 
                 center_x = (x_min + det_w / 2) / w
                 
-                # ── Extract Landmarks (YuNet: 5 points) ──
-                # YuNet format: [x,y,w,h, re_x,re_y, le_x,le_y, nt_x,nt_y, m_rx,m_ry, m_lx,m_ly, score]
-                # indices: 4,5=RE, 6,7=LE, 8,9=Nose, 10,11=M_Right, 12,13=M_Left
-                landmarks = {
-                    "nose": (det[8]/w, det[9]/h),
-                    "mouth_r": (det[10]/w, det[11]/h),
-                    "mouth_l": (det[12]/w, det[13]/h)
-                }
-                
-                # Check if MediaPipe confirms this detection
+                # FT-1: Localized MediaPipe Validation
+                # Only run MediaPipe on the crop if we have the detector and YuNet is somewhat confident
                 confirmed = False
-                for mp_det in mp_detections:
-                    bbox = mp_det.bounding_box
-                    mp_cx = (bbox.origin_x + bbox.width / 2) / w
-                    mp_cy = (bbox.origin_y + bbox.height / 2) / h
-                    dist = math.sqrt((center_x - mp_cx)**2 + (center_y - mp_cy)**2)
-                    if dist < 0.12: # Slightly wider tolerance
-                        confirmed = True
-                        break
+                if self._detector and score > 0.3:
+                    # Crop with 20% margin
+                    margin = int(min(det_w, det_h) * 0.2)
+                    x1 = max(0, int(x_min - margin))
+                    y1 = max(0, int(y_min - margin))
+                    x2 = min(w, int(x_min + det_w + margin))
+                    y2 = min(h, int(y_min + det_h + margin))
+                    
+                    if x2 > x1 and y2 > y1:
+                        crop = frame[y1:y2, x1:x2]
+                        crop_rgb = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
+                        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=crop_rgb)
+                        mp_result = self._detector.detect(mp_image)
+                        
+                        if mp_result and mp_result.detections:
+                            # If *any* face is found in this targeted crop, consider it confirmed
+                            confirmed = True
 
-                # Profile Recovery: If YuNet is confident but MediaPipe (frontal optimizer) is not,
-                # we accept it if the score is decent and it's not too low.
+                # Profile Recovery logic
                 if not confirmed and score < unconfirmed_score_min:
-                    # Potential profile?
                     if score > 0.40 and aspect > 1.2:
-                        pass # Accept as profile candidate
+                        pass # Profile candidate
                     else:
                         continue
                 
@@ -250,12 +230,14 @@ class FaceTrackingService:
                     "score": float(score),
                     "area": float(area_norm),
                     "confirmed": confirmed,
-                    "landmarks": landmarks,
+                    "landmarks": {
+                        "nose": (det[8]/w, det[9]/h),
+                        "mouth_r": (det[10]/w, det[11]/h),
+                        "mouth_l": (det[12]/w, det[13]/h)
+                    },
                     "bbox": {
-                        "origin_x": int(x_min),
-                        "origin_y": int(y_min),
-                        "width": int(det_w),
-                        "height": int(det_h)
+                        "origin_x": int(x_min), "origin_y": int(y_min),
+                        "width": int(det_w), "height": int(det_h)
                     }
                 })
             

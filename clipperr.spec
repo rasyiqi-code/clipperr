@@ -5,38 +5,30 @@ import clipperr_core
 
 block_cipher = None
 
-# Get the path to the clipperr_core binary dynamically
-core_dir = os.path.dirname(clipperr_core.__file__)
-core_binaries = []
-for f in os.listdir(core_dir):
-    if f.startswith("clipperr_core") and (f.endswith(".so") or f.endswith(".pyd")):
-        core_binaries.append((os.path.join(core_dir, f), 'clipperr_core'))
+binaries = []
 
-binaries = core_binaries
-# Add FFmpeg binaries for Windows portability
-for f in ["ffmpeg.exe", "ffprobe.exe"]:
-    if os.path.exists(f):
-        binaries.append((f, '.'))
-    elif os.name == 'nt':
-        # On Windows, we REALLY want these. If they are missing from root, 
-        # try common system paths during build as a fallback.
-        sys_ffmpeg = "C:\\Tools\\ffmpeg\\bin\\" + f
-        if os.path.exists(sys_ffmpeg):
-            binaries.append((sys_ffmpeg, '.'))
+# FFmpeg discovery for bundling
+for f in ["ffmpeg", "ffprobe"]:
+    ext = ".exe" if os.name == 'nt' else ""
+    local_f = f + ext
+    if os.path.exists(local_f):
+        binaries.append((local_f, '.'))
+    else:
+        # Fallback for build environment (AppVeyor or Dev Machine)
+        import shutil
+        sys_f = shutil.which(f)
+        if sys_f:
+            binaries.append((sys_f, '.'))
 
 # Datas: (source, destination_folder_in_bundle)
 datas = [
     ('app/assets/icon.png', 'app/assets'),
 ]
 
-# Only add .env if it actually exists (it's usually gitignored)
-if os.path.exists('.env'):
-    datas.append(('.env', '.'))
-else:
-    # Create an empty .env if it doesn't exist to avoid runtime errors later
-    with open('.env', 'w') as f:
-        pass
-    datas.append(('.env', '.'))
+# Robust .env handling
+if not os.path.exists('.env'):
+    with open('.env', 'w') as f: f.write("# Bundled Env\n")
+datas.append(('.env', '.'))
 
 a = Analysis(
     ['app/main.py'],

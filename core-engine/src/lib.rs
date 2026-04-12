@@ -8,18 +8,30 @@ fn get_version() -> PyResult<String> {
 }
 
 #[pyfunction]
-fn extract_metadata(path: String) -> PyResult<String> {
-    let output = Command::new("ffprobe")
+fn extract_metadata(ffprobe_path: String, video_path: String) -> PyResult<String> {
+    let output = Command::new(ffprobe_path)
         .args(&[
             "-v", "error",
             "-show_entries", "format=duration:stream=width,height,avg_frame_rate",
             "-of", "json",
-            &path,
+            &video_path,
         ])
         .output()
-        .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("Failed to run ffmpeg: {}", e)))?;
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(format!("Failed to run ffprobe: {}", e)))?;
 
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+/// Robustly escape a path for use inside FFmpeg filter strings (e.g. subtitles='...', movie='...')
+/// Handles Windows drive letters (C:\) and specific FFmpeg escaping rules.
+fn escape_path_for_filter(path: &str) -> String {
+    // 1. Replace backslashes with forward slashes (FFmpeg prefers them even on Windows)
+    let path = path.replace("\\", "/");
+    
+    // 2. Escape special characters for the filter string
+    // FFmpeg filter escaping requires escaping colons and single quotes
+    path.replace(":", "\\:")
+        .replace("'", "\\'")
 }
 
 /// A keyframe for dynamic panning: relative time (seconds from clip start) + center_x (0.0-1.0)
@@ -88,13 +100,21 @@ fn build_lerp_expression(keyframes: &[PanKeyframe]) -> String {
     if n == 0 {
         return "iw*0.5-ih*9/16/2".to_string();
     }
+    if n == 1 {
+        return format!("iw*{:.4}-ih*9/16/2", keyframes[0].x);
+    }
 
-    // Base case: the final x value
-    let last = &keyframes[n - 1];
-    let mut x_expr = format!("iw*{:.4}-ih*9/16/2", last.x);
+    let mut segments = Vec::new();
 
-    // Build the nested if(lt(t,T), ...) expression for the 'x' parameter
-    for i in (0..n - 1).rev() {
+    // 1. Before first keyframe
+    let first = &keyframes[0];
+    segments.push(format!(
+        "(iw*{:.4}-ih*9/16/2)*lt(t\\,{:.3})",
+        first.x, first.t
+    ));
+
+    // 2. Between keyframes (Linear Interpolation segments)
+    for i in 0..n - 1 {
         let kf_start = &keyframes[i];
         let kf_end = &keyframes[i + 1];
 
@@ -105,14 +125,14 @@ fn build_lerp_expression(keyframes: &[PanKeyframe]) -> String {
 
         let dt = t_end - t_start;
 
-        if dt < 0.01 || (x_end - x_start).abs() < 0.001 {
-            // Constant position before t_end
-            x_expr = format!(
-                "if(lt(t\\,{:.3})\\,iw*{:.4}-ih*9/16/2\\,{})",
-                t_end, x_start, x_expr
-            );
+        if dt < 0.001 || (x_end - x_start).abs() < 0.0001 {
+            // Constant segment
+            segments.push(format!(
+                "(iw*{:.4}-ih*9/16/2)*between(t\\,{:.3}\\,{:.3})",
+                x_start, t_start, t_end
+            ));
         } else {
-            // Linear interpolation between t_start and t_end
+            // Linear segment: x = x_start + (t - t_start) * (x_end - x_start) / dt
             let lerp_val = format!(
                 "iw*({:.4}+{:.4}*(t-{:.3})/{:.3})-ih*9/16/2",
                 x_start,
@@ -120,23 +140,28 @@ fn build_lerp_expression(keyframes: &[PanKeyframe]) -> String {
                 t_start,
                 dt
             );
-            x_expr = format!(
-                "if(lt(t\\,{:.3})\\,iw*{:.4}-ih*9/16/2\\,if(lt(t\\,{:.3})\\,{}\\,{}))",
-                t_start,
-                x_start,
-                t_end,
-                lerp_val,
-                x_expr
-            );
+            segments.push(format!(
+                "({})*between(t\\,{:.3}\\,{:.3})",
+                lerp_val, t_start, t_end
+            ));
         }
     }
 
-    x_expr
+    // 3. After last keyframe
+    let last = &keyframes[n - 1];
+    segments.push(format!(
+        "(iw*{:.4}-ih*9/16/2)*gte(t\\,{:.3})",
+        last.x, last.t
+    ));
+
+    // Join with + (Summation model)
+    segments.join("+")
 }
 
 #[pyfunction]
-#[pyo3(signature = (input_path, output_path, start, duration, center_x_norm, subtitle_path=None, keyframes_json=None, watermark_json_str=None))]
+#[pyo3(signature = (ffmpeg_path, input_path, output_path, start, duration, center_x_norm, subtitle_path=None, keyframes_json=None, watermark_json_str=None))]
 fn render_clip(
+    ffmpeg_path: String,
     input_path: String,
     output_path: String,
     start: f32,
@@ -184,21 +209,19 @@ fn render_clip(
         };
 
         if wm_type == "image" {
-            let path = config["path"].as_str().unwrap_or("")
-                .replace("\\", "\\\\")
-                .replace("'", "\\\\'");
+            let path = config["path"].as_str().unwrap_or("");
+            let escaped_path = escape_path_for_filter(path);
+            
             // Use format expression for opacity via colorchannelmixer
             filter_chain.push_str(&format!(
                 "movie='{}',colorchannelmixer=aa={:.2}[wm];[in]{}[cropped];[cropped][wm]overlay={}:{}[wm_out]", 
-                path, opacity, crop_filter, pos_x, pos_y
+                escaped_path, opacity, crop_filter, pos_x, pos_y
             ));
         } else if wm_type == "text" {
             // Text watermark uses drawtext.
             // In drawtext: w/h = video size, tw/th = text size.
-            let text = config["text"].as_str().unwrap_or("")
-                .replace("\\", "\\\\")
-                .replace(":", "\\:")
-                .replace("'", "\\'");
+            let text = config["text"].as_str().unwrap_or("");
+            let escaped_text = text.replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'");
             
             let (x_expr, y_expr) = match pos {
                 "top_left" => ("20", "20"),
@@ -211,7 +234,7 @@ fn render_clip(
 
             let drawtext = format!(
                 "drawtext=text='{}':fontcolor=white@{:2}:fontsize=40:fontfile='DejaVuSans-Bold.ttf':x={}:y={}",
-                text, opacity, x_expr, y_expr
+                escaped_text, opacity, x_expr, y_expr
             );
             filter_chain.push_str(&format!("{},{}[wm_out]", crop_filter, drawtext));
         } else {
@@ -223,10 +246,7 @@ fn render_clip(
     
     if let Some(sub_path) = subtitle_path {
         if !sub_path.is_empty() {
-            let escaped_path = sub_path
-                .replace("\\", "\\\\")
-                .replace(":", "\\:")
-                .replace("'", "\\'");
+            let escaped_path = escape_path_for_filter(&sub_path);
                 
             let sub_filter = if sub_path.ends_with(".ass") {
                 format!("ass='{}'", escaped_path)
@@ -249,7 +269,7 @@ fn render_clip(
         }
     }
 
-    let output = Command::new("ffmpeg")
+    let output = Command::new(ffmpeg_path)
         .args(&[
             "-nostdin",
             "-y",
