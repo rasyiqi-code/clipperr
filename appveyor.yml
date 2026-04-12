@@ -85,18 +85,39 @@ artifacts:
 deploy_script:
   - ps: |
       if ($env:APPVEYOR_REPO_TAG -eq "true") {
-        # GitHub CLI secara otomatis menggunakan lingkungan GH_TOKEN jika tersedia
+        # 1. Diagnostic: Check if Token exists
+        if (-not $env:GH_TOKEN) {
+            echo "CRITICAL ERROR: GH_TOKEN is not set in AppVeyor Environment variables!"
+            echo "Please go to AppVeyor UI -> Settings -> Environment and add GH_TOKEN."
+            exit 1
+        }
         
         $tag = $env:APPVEYOR_REPO_TAG_NAME
         $zip = "clipperr-windows-$($tag).zip"
         
-        # Cek apakah rilis sudah ada
+        echo "Attempting to deploy $zip to GitHub Release $tag..."
+        
+        # 2. Check build artifact exists
+        if (-not (Test-Path $zip)) {
+            echo "ERROR: Artifact $zip not found in root directory!"
+            exit 1
+        }
+
+        # 3. Check if release already exists
         $releaseCheck = & "C:\Program Files\GitHub CLI\gh.exe" release view $tag 2>&1
         if ($LASTEXITCODE -eq 0) {
-            echo "Rilis $tag sudah ada. Mengunggah $zip ke rilis yang sudah ada..."
+            echo "Release $tag already exists. Uploading $zip..."
             & "C:\Program Files\GitHub CLI\gh.exe" release upload $tag $zip --clobber
         } else {
-            echo "Membuat rilis baru $tag dan mengunggah $zip..."
-            & "C:\Program Files\GitHub CLI\gh.exe" release create $tag $zip --title "clipperr $tag" --notes "Rilis otomatis untuk versi $tag" --generate-notes
+            echo "Creating new release $tag and uploading $zip..."
+            & "C:\Program Files\GitHub CLI\gh.exe" release create $tag $zip --title "clipperr $tag" --notes "Automated release for version $tag" --generate-notes
         }
+        
+        if ($LASTEXITCODE -ne 0) {
+            echo "DEPLOYMENT FAILED. This is likely due to an invalid or expired GH_TOKEN."
+            echo "Please verify the token has 'repo' scopes and is correctly pasted in AppVeyor."
+            exit 1
+        }
+        
+        echo "Deployment successful!"
       }
