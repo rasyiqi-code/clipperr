@@ -2,6 +2,9 @@ use pyo3::prelude::*;
 use serde::Deserialize;
 use std::process::Command;
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 #[pyfunction]
 fn get_version() -> PyResult<String> {
     Ok("0.2.0".to_string())
@@ -9,8 +12,12 @@ fn get_version() -> PyResult<String> {
 
 #[pyfunction]
 fn extract_metadata(ffprobe_path: String, video_path: String) -> PyResult<String> {
-    let output = Command::new(ffprobe_path)
-        .args(&[
+    let mut cmd = Command::new(ffprobe_path);
+
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+
+    let output = cmd.args(&[
             "-v", "error",
             "-show_entries", "format=duration:stream=width,height,avg_frame_rate",
             "-of", "json",
@@ -269,8 +276,12 @@ fn render_clip(
         }
     }
 
-    let output = Command::new(ffmpeg_path)
-        .args(&[
+    let mut cmd = Command::new(ffmpeg_path);
+
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+
+    let output = cmd.args(&[
             "-nostdin",
             "-y",
             "-ss", &start.to_string(),
