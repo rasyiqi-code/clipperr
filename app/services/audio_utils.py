@@ -29,7 +29,10 @@ def get_audio_energy(video_path: str, timestamp_sec: float, duration_sec: float 
             "-"
         ]
         
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        creationflags = 0
+        if __import__("sys").platform == "win32":
+            creationflags = 0x08000000  # CREATE_NO_WINDOW
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, creationflags=creationflags)
         raw_data, _ = process.communicate(timeout=2.0)
         
         if not raw_data:
@@ -92,7 +95,10 @@ class AudioEnergyCache:
                 "-"
             ]
             
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            creationflags = 0
+            if __import__("sys").platform == "win32":
+                creationflags = 0x08000000  # CREATE_NO_WINDOW
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, creationflags=creationflags)
             raw_data, _ = process.communicate(timeout=max(10.0, actual_duration * 2))
             
             if not raw_data:

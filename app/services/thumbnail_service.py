@@ -66,7 +66,10 @@ class ThumbnailService:
                 "-loglevel", "error",
                 out_path
             ]
-            subprocess.run(cmd, check=True)
+            creationflags = 0
+            if __import__("sys").platform == "win32":
+                creationflags = 0x08000000  # CREATE_NO_WINDOW
+            subprocess.run(cmd, check=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=creationflags)
             return os.path.exists(out_path)
         except Exception as e:
             log.error("Failed to extract thumbnail frame: %s", e)
